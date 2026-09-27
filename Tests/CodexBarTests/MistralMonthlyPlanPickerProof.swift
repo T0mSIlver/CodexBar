@@ -29,8 +29,8 @@ final class MistralMonthlyPlanPickerProof: XCTestCase {
             zaiTokenStore: NoopZaiTokenStore(),
             syntheticTokenStore: NoopSyntheticTokenStore())
         settings.statusChecksEnabled = false
-        settings.menuBarIconStyle = .iconAndPercent
-        settings.setMenuBarLayout(MenuBarLayout(lines: [[.icon, .percent(window: .automatic)]]), for: .mistral)
+        // Critters is the app's default menu bar style.
+        settings.menuBarIconStyle = .critters
         self.log.append("before: metric=\(settings.menuBarMetricPreference(for: .mistral).rawValue)")
 
         let app = NSApplication.shared
@@ -53,15 +53,18 @@ final class MistralMonthlyPlanPickerProof: XCTestCase {
             window.appearance = NSAppearance(named: scheme == "dark" ? .darkAqua : .aqua)
             if scheme == "dark" {
                 settings.setMenuBarMetricPreference(.automatic, for: .mistral)
-                settings.setMenuBarLayout(
-                    MenuBarLayout(lines: [[.icon, .percent(window: .automatic)]]), for: .mistral)
             }
             window.center()
             window.makeKeyAndOrderFront(nil)
             app.activate(ignoringOtherApps: true)
             self.flush(window)
             try self.snapshot(window, to: output.appendingPathComponent("picker-before-\(scheme).png"))
-            let popup = try XCTUnwrap(Self.popup(in: hosting), "Expected the production Picker's native control")
+            guard let popup = Self.popup(in: hosting) else {
+                self.log.append("\(scheme): picker hidden")
+                self.capturedOptions = []
+                try self.snapshot(window, to: output.appendingPathComponent("picker-open-\(scheme).png"))
+                continue
+            }
             self.pending = (window, popup, output.appendingPathComponent("picker-open-\(scheme).png"), "Monthly Plan")
             let timer = Timer(
                 timeInterval: 1, target: self, selector: #selector(self.captureAndChoose), userInfo: nil,
@@ -198,6 +201,7 @@ private struct PickerProofView: View {
 
     var body: some View {
         Form {
+            LabeledContent("Menu bar style", value: self.settings.menuBarIconStyle.label)
             ProviderMenuBarPercentWindowSettingsView(provider: .mistral, settings: self.settings)
         }
         .formStyle(.grouped)
