@@ -1,0 +1,39 @@
+name: mistral-picker-proof
+on:
+  push:
+    branches: [proof/mistral-monthly-plan-picker]
+  workflow_dispatch:
+jobs:
+  render:
+    strategy:
+      fail-fast: false
+      matrix:
+        phase: [before, after]
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Use upstream main sources for the before run
+        if: matrix.phase == 'before'
+        run: |
+          git fetch https://github.com/steipete/CodexBar.git main
+          git checkout FETCH_HEAD -- Sources Tests
+          git checkout HEAD -- Tests/CodexBarTests/MistralMonthlyPlanPickerProof.swift
+          rm Tests/CodexBarTests/MistralMonthlyPlanPickerTests.swift
+      - name: Select Xcode 26.6
+        run: |
+          sudo xcode-select -s /Applications/Xcode_26.6.app/Contents/Developer
+          echo "DEVELOPER_DIR=/Applications/Xcode_26.6.app/Contents/Developer" >> "$GITHUB_ENV"
+      - name: Render
+        run: |
+          MISTRAL_PICKER_PROOF_DIR="$RUNNER_TEMP/proof" MISTRAL_PICKER_PROOF_PHASE=${{ matrix.phase }} \
+            CODEXBAR_SUPPRESS_TEST_KEYCHAIN_ACCESS=1 swift test --filter MistralMonthlyPlanPickerProof
+          ls -la "$RUNNER_TEMP/proof"
+          cat "$RUNNER_TEMP/proof/log.txt" || true
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mistral-picker-proof-${{ matrix.phase }}
+          path: ${{ runner.temp }}/proof
