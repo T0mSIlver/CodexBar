@@ -705,8 +705,10 @@ public struct ClaudeUsageFetcher: ClaudeUsageFetching, Sendable {
             return snapshot
         }
 
+        /// `claude /usage` without a PTY starts the whole CLI, which takes longer with a large session history and
+        /// other Claude sessions running: 3 s idle, 5 to 8.5 s on a busy machine. 8 s cut it off half the time.
         private static func directCLIUsageTimeout(for ptyTimeout: TimeInterval) -> TimeInterval {
-            min(max(ptyTimeout / 3, 6), 8)
+            min(max(ptyTimeout / 2, 8), 20)
         }
 
         private static func directCLIErrorShouldReplacePTYError(_ error: Error) -> Bool {
