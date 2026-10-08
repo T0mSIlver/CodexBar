@@ -398,6 +398,8 @@ final class UsageStore {
     @ObservationIgnored var spendDashboardCodexCostCatchUpPassIsRunning = false
     @ObservationIgnored var spendDashboardCodexCostCatchUpRestartRequested = false
     @ObservationIgnored var spendDashboardCodexCostCatchUpPausedContext: SpendDashboardCodexCostCatchUpContext?
+    @ObservationIgnored var spendDashboardCodexCostCatchUpWaitingContext: SpendDashboardCodexCostCatchUpContext?
+    @ObservationIgnored var spendDashboardCodexCostCatchUpCompletionCheckTask: Task<Void, Never>?
     @ObservationIgnored var forcedRefreshEnrichmentTask: Task<Void, Never>?
     @ObservationIgnored var forcedRefreshEnrichmentToken: UUID?
     @ObservationIgnored var pendingForcedRefreshEnrichmentTask: Task<Void, Never>?
@@ -925,10 +927,6 @@ final class UsageStore {
 
     // MARK: - Private
 
-    private func bindSettings() {
-        self.observeSettingsChanges()
-    }
-
     #if DEBUG
     @ObservationIgnored private(set) var refreshTimerSleepOverrideForTesting: Duration?
     @ObservationIgnored private(set) var fixedRefreshIntervalForTesting: TimeInterval?
@@ -1045,6 +1043,10 @@ final class UsageStore {
 }
 
 extension UsageStore {
+    private func bindSettings() {
+        self.observeSettingsChanges()
+    }
+
     func dumpLog(toFileFor provider: UsageProvider) async -> URL? {
         let text = await self.debugLog(for: provider)
         let filename = "codexbar-\(provider.rawValue)-probe.txt"
