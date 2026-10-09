@@ -177,7 +177,7 @@ jobs:
           if [[ -z "$COMPILED_CACHE_KEY" ]]; then
             rm -f .build/ci-inputs.json
           fi
-          python3 Scripts/ci_swiftpm_cache.py restore --context "$BUILD_CONTEXT"
+          python3 Scripts/ci_swiftpm_cache.py restore --context "$BUILD_CONTEXT" --clean-fallback
           # Record inputs before compiling; cache publication also requires a clean tree.
           python3 Scripts/ci_swiftpm_cache.py snapshot --context "$BUILD_CONTEXT"
 
@@ -301,7 +301,7 @@ jobs:
           if [[ -z "$COMPILED_CACHE_KEY" ]]; then
             rm -f .build/ci-inputs.json
           fi
-          python3 Scripts/ci_swiftpm_cache.py restore --context "$BUILD_CONTEXT"
+          python3 Scripts/ci_swiftpm_cache.py restore --context "$BUILD_CONTEXT" --clean-fallback
           python3 Scripts/ci_swiftpm_cache.py snapshot --context "$BUILD_CONTEXT"
 
       - name: Build app, CLI, and tests with Swift 6.2

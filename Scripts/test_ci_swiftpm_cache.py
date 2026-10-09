@@ -82,6 +82,25 @@ class SwiftPMCacheTests(unittest.TestCase):
         self.assertEqual(path.stat().st_mtime_ns, new_ns)
         self.assertEqual(untracked.stat().st_mtime_ns, untracked_ns)
 
+    def test_removed_resource_requires_clean_before_any_timestamp_is_restored(self):
+        source = self.write("Sources/Main.swift", "original\n")
+        fresh_ns = source.stat().st_mtime_ns
+        (self.root / "Tests/Resources/fixture.md").unlink()
+        self.git("add", "-A", "--", "Tests/Resources/fixture.md")
+        result = self.result()
+        self.assertIn("fallback", result)
+        self.assertEqual(result["removed"], 1)
+        self.assertEqual(result["restored"], 0)
+        self.assertEqual(source.stat().st_mtime_ns, fresh_ns)
+
+    def test_new_docs_do_not_invalidate_the_build_input_graph(self):
+        self.write("docs/new.md", "documentation\n")
+        self.git("add", "docs/new.md")
+        result = self.result()
+        self.assertNotIn("fallback", result)
+        self.assertEqual(result["restored"], len(self.names))
+        self.assertEqual(result["missing"], 1)
+
     def test_changed_git_or_filesystem_permissions_are_not_normalized(self):
         path = self.root / "Sources/probe.c"
         self.write("Sources/probe.c", "original\n")
@@ -149,6 +168,15 @@ class SwiftPMCacheTests(unittest.TestCase):
             metadata.unlink()
             metadata.symlink_to(outside)
             self.assertIn("fallback", self.result())
+
+    def test_non_regular_metadata_and_excessive_json_depth_fall_back(self):
+        metadata = self.root / cache.DEFAULT_METADATA
+        metadata.unlink()
+        os.mkfifo(metadata)
+        self.assertIn("fallback", self.result())
+        metadata.unlink()
+        metadata.write_text("[" * 2000 + "0" + "]" * 2000)
+        self.assertIn("fallback", self.result())
 
     def test_git_tracked_symlinks_are_not_snapshotted(self):
         link = self.root / "TrackedLink.swift"

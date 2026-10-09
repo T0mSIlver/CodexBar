@@ -90,7 +90,7 @@ def open_input(root_fd, name):
             child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
             os.close(parent)
             parent = child
-        fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW, dir_fd=parent)
+        fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             os.close(fd)
             raise ValueError("input is not a regular file")
@@ -203,8 +203,18 @@ def restore(root, metadata, context):
         try:
             files = read_metadata(root_fd, metadata, context)
             tracked = tracked_files(root)
-        except (OSError, ValueError, UnicodeError) as error:
+        except (OSError, ValueError, UnicodeError, RecursionError) as error:
             return {**result, "fallback": str(error)}
+        def build_inputs(names):
+            return {name for name in names if name in {"Package.swift", "Package.resolved"}
+                    or name.startswith(("Sources/", "Tests/", "WidgetExtension/"))}
+
+        cached_inputs, current_inputs = build_inputs(files), build_inputs(tracked)
+        if cached_inputs != current_inputs:
+            # SwiftPM can leave removed .process resources in an old bundle.
+            # Reuse checkouts, but clean products when the input graph changes.
+            return {**result, "missing": len(current_inputs - cached_inputs),
+                    "removed": len(cached_inputs - current_inputs), "fallback": "build input paths changed"}
         for name, git_mode in tracked.items():
             cached = files.get(name)
             if cached is None:
@@ -229,6 +239,8 @@ def restore(root, metadata, context):
                     os.close(fd)
             except (OSError, ValueError):
                 result["unavailable"] += 1
+        if result["unavailable"]:
+            result["fallback"] = "some checkout inputs could not be verified"
         return result
     finally:
         os.close(root_fd)
@@ -241,6 +253,7 @@ def main():
     parser.add_argument("--metadata", default=DEFAULT_METADATA)
     parser.add_argument("--context")
     parser.add_argument("--lane", choices=LANES)
+    parser.add_argument("--clean-fallback", action="store_true")
     args = parser.parse_args()
     if args.action == "context":
         if not args.lane:
@@ -255,7 +268,11 @@ def main():
     if not args.context:
         parser.error("a nonempty build context is required")
     function = snapshot if args.action == "snapshot" else restore
-    print(json.dumps(function(args.root, args.metadata, args.context), sort_keys=True))
+    result = function(args.root, args.metadata, args.context)
+    if args.action == "restore" and args.clean_fallback and "fallback" in result:
+        subprocess.run(["swift", "package", "clean"], cwd=args.root, check=True)
+        result["cleaned"] = True
+    print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":
