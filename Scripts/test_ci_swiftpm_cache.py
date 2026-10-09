@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 import ci_swiftpm_cache as cache
 
@@ -59,6 +60,14 @@ class SwiftPMCacheTests(unittest.TestCase):
         self.assertEqual(result["changed"], 1)
         self.assertEqual(path.stat().st_mtime_ns, changed_ns)
         self.assertEqual(path.read_text(), "modified\n")
+
+    def test_changed_content_with_preserved_or_older_timestamp_is_invalidated(self):
+        for timestamp in (self.original_ns, self.original_ns - 1_000_000_000):
+            with self.subTest(timestamp=timestamp):
+                path = self.write("Sources/Main.swift", "modified\n", timestamp)
+                self.assertEqual(self.result()["changed"], 1)
+                self.assertGreater(path.stat().st_mtime_ns, self.original_ns)
+                self.assertEqual(path.read_text(), "modified\n")
 
     def test_added_deleted_and_untracked_files_keep_checkout_state(self):
         path = self.write("Sources/Added.swift", "new\n")
@@ -148,6 +157,35 @@ class SwiftPMCacheTests(unittest.TestCase):
         cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
         files = json.loads((self.root / cache.DEFAULT_METADATA).read_text())["files"]
         self.assertNotIn("TrackedLink.swift", files)
+
+    def test_context_changes_with_toolchain_sdk_flags_and_dependencies(self):
+        for name in cache.CONTEXT_INPUTS:
+            self.write(name, "context-input\n")
+        versions = {
+            ("xcodebuild", "-version"): "Xcode test build",
+            ("swift", "--version"): "Swift test version",
+            ("swift", "build", "--help"): "default: native",
+            ("xcrun", "--sdk", "macosx", "--show-sdk-path"): "/sdk",
+            ("xcrun", "--sdk", "macosx", "--show-sdk-version"): "test-sdk",
+            ("xcrun", "--sdk", "macosx", "--show-sdk-build-version"): "test-build",
+        }
+        with patch.object(cache.subprocess, "check_output", side_effect=lambda args, **_: versions[args]), \
+                patch.object(cache.platform, "machine", return_value="arm64"):
+            baseline = cache.build_context(self.root, "macos26-arm64")
+            self.assertEqual(baseline, cache.build_context(self.root, "macos26-arm64"))
+            self.assertNotEqual(baseline["context"], cache.build_context(self.root, "macos15-arm64")["context"])
+            for arguments, version in list(versions.items()):
+                with self.subTest(arguments=arguments):
+                    versions[arguments] = version + "-changed"
+                    self.assertNotEqual(baseline["context"], cache.build_context(self.root, "macos26-arm64")["context"])
+                    versions[arguments] = version
+            for name in cache.CONTEXT_INPUTS:
+                with self.subTest(name=name):
+                    self.write(name, "changed-context\n")
+                    self.assertNotEqual(baseline["context"], cache.build_context(self.root, "macos26-arm64")["context"])
+                    self.write(name, "context-input\n")
+            with patch.object(cache.platform, "machine", return_value="x86_64"):
+                self.assertNotEqual(baseline["context"], cache.build_context(self.root, "macos26-arm64")["context"])
 
 
 if __name__ == "__main__":

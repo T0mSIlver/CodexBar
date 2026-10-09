@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Restore checkout mtimes only for verified, unchanged Git-tracked inputs."""
+"""Reuse verified Git-tracked input mtimes and invalidate backdated changes."""
 
 import argparse
 import hashlib
 import json
 import os
 from pathlib import Path, PurePosixPath
+import platform
 import re
 import secrets
 import stat
@@ -15,6 +16,43 @@ import time
 SCHEMA = 1
 DEFAULT_METADATA = ".build/ci-inputs.json"
 MAX_METADATA_BYTES = 16 * 1024 * 1024
+LANES = ("macos26-arm64", "macos15-arm64")
+CONTEXT_INPUTS = (
+    "Package.swift", "Package.resolved", ".github/workflows/ci.yml",
+    "Scripts/ci_swiftpm_cache.py", "Scripts/test.sh", "Scripts/test_environment.sh",
+    "Scripts/ci_swift_test_by_suite.py", "Scripts/direct_swift_test_groups.py",
+)
+
+
+def build_context(root, lane):
+    """Bind build reuse to the selected toolchain, SDK, dependencies and flags."""
+    root = Path(root).resolve()
+    if lane not in LANES:
+        raise ValueError("unsupported cache lane")
+
+    def output(*args):
+        return subprocess.check_output(args, cwd=root, text=True).strip()
+
+    description = {
+        "schema": SCHEMA,
+        "lane": lane,
+        "architecture": platform.machine(),
+        "xcode": output("xcodebuild", "-version"),
+        "swift": output("swift", "--version"),
+        "sdk_path": output("xcrun", "--sdk", "macosx", "--show-sdk-path"),
+        "sdk_version": output("xcrun", "--sdk", "macosx", "--show-sdk-version"),
+        "sdk_build": output("xcrun", "--sdk", "macosx", "--show-sdk-build-version"),
+        # The help text also binds the default build system on each Swift version.
+        "build_options": output("swift", "build", "--help"),
+        "configuration": "debug-build-tests",
+        "inputs": {
+            name: hashlib.sha256((root / name).read_bytes()).hexdigest()
+            for name in CONTEXT_INPUTS
+        },
+    }
+    encoded = json.dumps(description, sort_keys=True, separators=(",", ":")).encode()
+    context = hashlib.sha256(encoded).hexdigest()
+    return {"context": context, "prefix": f"swiftpm-compiled-v1-{lane}-{context}-"}
 
 
 def relative_path(value):
@@ -177,6 +215,11 @@ def restore(root, metadata, context):
                 try:
                     current = input_record(fd, git_mode)
                     if any(current[key] != cached[key] for key in ("sha256", "size", "git_mode", "file_mode")):
+                        # Some checkout/copy tools preserve timestamps. A changed input
+                        # must not look identical to the compiler's previous build record.
+                        if current["mtime_ns"] <= cached["mtime_ns"]:
+                            changed_ns = max(time.time_ns(), cached["mtime_ns"] + 1)
+                            os.utime(fd, ns=(os.fstat(fd).st_atime_ns, changed_ns))
                         result["changed"] += 1
                         continue
                     # Use the verified descriptor: path replacement cannot redirect this write.
@@ -193,11 +236,22 @@ def restore(root, metadata, context):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("snapshot", "restore"))
+    parser.add_argument("action", choices=("snapshot", "restore", "context"))
     parser.add_argument("--root", default=".")
     parser.add_argument("--metadata", default=DEFAULT_METADATA)
-    parser.add_argument("--context", required=True)
+    parser.add_argument("--context")
+    parser.add_argument("--lane", choices=LANES)
     args = parser.parse_args()
+    if args.action == "context":
+        if not args.lane:
+            parser.error("a cache lane is required")
+        result = build_context(args.root, args.lane)
+        if path := os.environ.get("GITHUB_OUTPUT"):
+            with open(path, "a", encoding="utf-8") as output:
+                for key, value in result.items():
+                    output.write(f"{key}={value}\n")
+        print(json.dumps(result, sort_keys=True))
+        return
     if not args.context:
         parser.error("a nonempty build context is required")
     function = snapshot if args.action == "snapshot" else restore
