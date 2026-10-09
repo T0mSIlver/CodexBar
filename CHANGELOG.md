@@ -40,6 +40,7 @@
 - Usage & Spend: reduce annual token activity update work by reusing calendar dates, coverage, and localized date formatters without changing chart output (#4328). Thanks @Yuxin-Qiao!
 - Ollama: read current credit wallets, show balances in Balance layouts, and retain monthly credits used and refill details without inventing quota percentages or changing older meters (#4370). Thanks @albidev!
 - Notion AI: recover usage for a configured workspace when large workspace/member lists exceed the plugin response limit, and explain how to configure a workspace when needed (#4341). Thanks @optemism!
+- Usage & Spend: clear a sleeping Codex history catch-up activity when a refresh confirms that all account caches have completed, without another scan or undoing a user stop, and recheck account coverage when a refresh arrives during the completion check (#4379). Thanks @Yuxin-Qiao!
 - Codex: ignore commented-out usage endpoint overrides, so disabled proxies cannot shadow active configuration or the default endpoint (#4330). Thanks @lishouxian!
 - Usage & Spend: keep date inspection inside recorded chart buckets, wrap scoped source legends, and retain recorded zero-dollar sources and amounts (#4329). Thanks @Yuxin-Qiao!
 
