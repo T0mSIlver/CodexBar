@@ -5,6 +5,23 @@ import Testing
 
 struct SpendTrendHourlyDaysTests {
     @Test
+    func `navigation reads preserve snapshot equality across independent groups and copies`() throws {
+        let start = try Self.date("2026-10-01T00:00:00Z")
+        let points = [Self.point(start)]
+        let first = Self.group(points: points, bounds: start...start.addingTimeInterval(86400))
+        let sameInputs = Self.group(points: points, bounds: start...start.addingTimeInterval(86400))
+        let copy = first
+        #expect(first == sameInputs)
+        #expect(SpendTrendChartModel.hourlyDays(first) == [start])
+        #expect(first == sameInputs)
+        #expect(copy == sameInputs)
+        #expect(SpendTrendChartModel.hourlyDays(copy) == [start])
+        #expect(SpendTrendChartModel.hourlyDays(sameInputs) == [start])
+        #expect(first == sameInputs)
+        #expect(first != Self.group(points: [], bounds: start...start.addingTimeInterval(86400)))
+    }
+
+    @Test
     func `empty hourly history has no navigable or focused day`() throws {
         let start = try Self.date("2026-10-01T00:00:00Z")
         let group = Self.group(points: [], bounds: start...start.addingTimeInterval(86400), selectedDay: start)

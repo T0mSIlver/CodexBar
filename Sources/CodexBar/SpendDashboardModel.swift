@@ -266,8 +266,11 @@ struct SpendDashboardModel: Equatable, Sendable {
         let displayedModels: [ModelRow]
         let selectedDay: Date?
         let hourlyPoints: [HourlyPoint]
-        /// Navigation dates are shared across view evaluations of this immutable range and time zone.
-        let hourlyDays: [Date]
+        private let hourlyDayIndex: SpendDashboardHourlyDays
+        var hourlyDays: [Date] {
+            self.hourlyDayIndex.value
+        }
+
         let hourlyChartDomain: ClosedRange<Date>?
         let timeZone: TimeZone
 
@@ -324,10 +327,12 @@ struct SpendDashboardModel: Equatable, Sendable {
             self.displayedModels = Array(models.prefix(Self.modelRowDisplayLimit))
             self.selectedDay = selectedDay
             self.hourlyPoints = hourlyPoints
-            let calendar = SpendDashboardModel.gregorianCalendar(timeZone: timeZone)
-            self.hourlyDays = Set(hourlyPoints.filter {
-                $0.hour >= chartDomain.lowerBound && $0.hour < chartDomain.upperBound
-            }.map { calendar.startOfDay(for: $0.hour) }).sorted()
+            self.hourlyDayIndex = SpendDashboardHourlyDays {
+                let calendar = SpendDashboardModel.gregorianCalendar(timeZone: timeZone)
+                return Set(hourlyPoints.filter {
+                    $0.hour >= chartDomain.lowerBound && $0.hour < chartDomain.upperBound
+                }.map { calendar.startOfDay(for: $0.hour) }).sorted()
+            }
             self.hourlyChartDomain = hourlyChartDomain
             self.timeZone = timeZone
         }

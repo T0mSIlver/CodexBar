@@ -7,17 +7,73 @@ read_when:
 # Hourly navigation date reuse
 
 `CurrencyGroup` is immutable. Its hourly points, reporting range and time zone determine the
-available navigation dates. Computing these dates once lets view evaluations and previous/next
-day navigation reuse the result. A new group derives its own dates when the data, range or zone
-changes. The production change uses the same normalization, half-open range and sorting as before.
+available navigation dates. Each group owns a synchronized, initially pending date index.
+Only the first navigation-date lookup performs the original normalization, half-open filtering,
+deduplication and sorting. Later reads and value copies reuse that result. Summary-only model
+construction and snapshot equality never evaluate it. A new group owns a fresh pending index
+when the data, range or zone changes; deriving the dates releases the factory's captured history.
+
+## Demand-driven correction
+
+The initial revision eagerly derived dates during model construction. Review identified a
+summary-only consumer: `StatusItemController.addOverviewRows` synchronously calls
+`overviewSpendDashboardModel` and consumes an `OverviewSpendSummary`. Eager indexing made this
+path pay for chart navigation it never uses. The final implementation keeps the cache pending
+until navigation actually requests the dates.
+
+The new [headless model benchmark](headless-benchmark.py) compiles the actual model, navigation
+and summary declarations from the original baseline, the eager revision and the working tree.
+Model/component sources use `swiftc -O`; common core dependencies reuse existing **Debug**
+SwiftPM objects. It runs six fresh processes in baseline/lazy/eager/eager/lazy/baseline order,
+using the same 35,020-point synthetic fixture. A documentation-only counter records every
+execution of the date derivation. Full arrays, reporting boundaries, focused dates, totals and
+summary strings are compared across all six runs in 11 contexts.
+
+[The complete six-run result](headless-results.json) confirms zero date derivations during the
+initial summary build or ten subsequent summary builds in the corrected version. The eager
+revision executes one and ten derivations respectively. First navigation executes the algorithm
+once, and both later 15-read sequences execute it zero times.
+
+| Operation, thread CPU | Original baseline, A1 / A2 | Demand-driven, B1 / B2 | Eager, C1 / C2 |
+| --- | ---: | ---: | ---: |
+| Initial model plus summary | 79.36 / 91.60 ms | 81.18 / 96.62 ms | 105.78 / 99.03 ms |
+| Ten model plus summary rebuilds, cumulative | 672.50 / 784.22 ms | 684.10 / 805.79 ms | 899.80 / 1015.75 ms |
+| First 14 date lookups | 330.64 / 353.92 ms | 21.24 / 24.54 ms | both <0.01 ms |
+| Later 15 date lookups | 365.78 / 391.38 ms | both <0.01 ms | both <0.01 ms |
+| Another 15 date lookups | 351.58 / 399.28 ms | both <0.01 ms | both <0.01 ms |
+
+The exact zero-derivation checks establish that summary-only consumers avoid the added date
+scan. Model/summary timings vary across runs and include common costs; they do not prove zero
+total overhead. The first chart request still pays one 21–25 ms derivation in this fixture.
+Subsequent reads are near clock resolution; no large speedup ratio is claimed. All 11 complete
+context records, including summary strings, match in every mode and every run.
+
+This is an optimized **model/component** comparison, not a complete Release application or
+native-menu measurement. No window, screenshot or recording is created. CPU timings exclude
+fixture generation and include model construction plus production summary formatting.
+The original full Settings experiment below remains evidence for repeated native navigation
+calls and the initial eager prototype; its timings are not presented as a fresh UI measurement
+of the demand-driven correction.
+
+Run the headless comparison after building the repository's isolated tests:
+
+```sh
+python3 docs/proof/spend-hourly-days/headless-benchmark.py
+```
+
+The script uses existing build dependencies, a synthetic home, disabled Keychain access,
+denied network access and a sandbox denying personal-home access outside the ignored build
+directory. Source and executable fingerprints accompany the generated result in
+`.build/hourly-days-headless/results.json`.
 
 ## Full Settings experiment
 
 The baseline is `b0aa7fe0add90b06e3614328715d827f1c898a0f`. A complete **Release (-O)** diagnostic
 application displays the production `SettingsWindowController`, `PreferencesView` and
 `SpendDashboardPane` with injected synthetic data. The shipping date-list body is retained;
-the prototype switch moves that same computation to immutable group creation. The production
-patch makes that reuse unconditional and removes the diagnostic switch from the shipping path.
+the prototype switch moves that same computation to immutable group creation. That eager
+prototype predates the demand-driven correction above. Neither version ships diagnostic
+switches, counters or entry points in the application.
 
 Four sources contain 365 days, **35,020 hourly points** and 1,460 daily points. The current day
 contains 19 hours; earlier days contain 24. Cursor also has 10,000 synthetic sessions, with the
