@@ -671,8 +671,9 @@ capability failures also fail the job instead of falling back to serial executio
 
 Hosted macOS CI runs the complete inventory with two direct workers on one macOS 26 / Xcode 26.6
 runner, retaining the 75-minute test step and 90-minute job limits. All groups are required:
-discovery, admission, helper crashes, timeouts and test failures fail the job. Group size remains
-eight with a 120-second suite timeout and no retries for ordinary test failures. Three independent
+discovery, admission, helper crashes, unrecovered timeouts and test failures fail the job. Group size remains
+eight with a 120-second suite timeout and no retries for ordinary test failures. Timed-out groups retain
+the existing isolated-selection retry policy; each retry has its own deadline. Three independent
 hosted complete-inventory runs validated this mode before enabling it. The separate macOS 15 /
 Xcode 26.3 job still builds the app, CLI and tests for compatibility; it does not run a full suite.
 Both serial and direct modes print ordered selection groups and timing summaries.
