@@ -29,6 +29,7 @@
 
 ### Fixed
 
+- Claude: retain session, weekly, and model-specific quotas when tall inline CLI usage panels exceed the former 50-row terminal (#4392). Thanks @T0mSIlver!
 - Pi: keep readable local cost history when a live process has an unreadable environment, and use Pi's block logo across app and web icons (#4365, #4366). Thanks @oryband!
 - Linux: release exited Codex and Grok RPC child processes so long-running `codexbar serve` does not exhaust file descriptors (#4367). Thanks @MonkeyMed!
 - Homebrew updates: match version checks, one-click upgrades, and recovery commands to the official or steipete/tap install receipt while preserving update notifications (#4375). Thanks @dnicolson!
