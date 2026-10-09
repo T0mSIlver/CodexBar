@@ -73,6 +73,65 @@ struct CursorAppAuthLinuxTests {
     }
 
     @Test
+    func `cursor-agent auth path follows the app database's config home`() {
+        #expect(CursorAgentAuthStore.resolveDefaultPath(home: "/home/test", environment: [:]) ==
+            "/home/test/.config/cursor/auth.json")
+        #expect(CursorAgentAuthStore.resolveDefaultPath(
+            home: "/home/test",
+            environment: ["XDG_CONFIG_HOME": "/custom/config"]) == "/custom/config/cursor/auth.json")
+    }
+
+    @Test
+    func `cursor-agent auth file authenticates without Cursor.app`() async throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let token = try Self.makeToken()
+        let auth = directory.appendingPathComponent("auth.json")
+        try Data(#"{"accessToken":"\#(token)","refreshToken":"refresh"}"#.utf8).write(to: auth)
+        let before = try Data(contentsOf: auth)
+        let probe = CursorStatusProbe(
+            browserDetection: BrowserDetection(cacheTTL: 0),
+            urlSession: Self.transport(token: token),
+            appAuthStore: CursorLocalAuthStores(stores: [
+                CursorAppAuthStore(dbPath: directory.appendingPathComponent("missing.vscdb").path),
+                CursorAgentAuthStore(path: auth.path),
+            ]))
+
+        let snapshot = try await probe.fetch(allowCachedSessions: false).toUsageSnapshot()
+
+        #expect(snapshot.primary?.usedPercent == 30)
+        #expect(try Data(contentsOf: auth) == before)
+    }
+
+    @Test
+    func `cursor-agent auth file without an access token is no session`() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let auth = directory.appendingPathComponent("auth.json")
+        try Data(#"{"refreshToken":"refresh"}"#.utf8).write(to: auth)
+        #expect(try CursorAgentAuthStore(path: auth.path).loadSession() == nil)
+        #expect(try CursorAgentAuthStore(path: directory.appendingPathComponent("none.json").path)
+            .loadSession() == nil)
+    }
+
+    @Test
+    func `local auth stores prefer the first usable session`() throws {
+        let app = try CursorAppAuthSession(accessToken: Self.makeToken())
+        let agent = try CursorAppAuthSession(accessToken: Self.makeToken(expiresAt: 4_102_444_801))
+        let expired = try CursorAppAuthSession(accessToken: Self.makeToken(expiresAt: 1))
+        func first(_ sessions: CursorAppAuthSession?...) throws -> CursorAppAuthSession? {
+            try CursorLocalAuthStores(stores: sessions.map { StubAppAuth(session: $0) }).loadSession()
+        }
+        #expect(try first(app, agent) == app)
+        #expect(try first(nil, agent) == agent)
+        #expect(try first(expired, agent) == agent)
+        #expect(try first(expired, nil) == expired)
+        #expect(try first(nil, nil) == nil)
+    }
+
+    @Test
     func `cached session takes precedence over a valid app token`() async throws {
         KeychainCacheStore.setTestStoreForTesting(true)
         defer { KeychainCacheStore.setTestStoreForTesting(false) }

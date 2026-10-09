@@ -788,7 +788,7 @@ public struct CursorStatusProbe: Sendable {
             browserDetection: browserDetection,
             browserCookieImportOrder: Self.defaultBrowserCookieImportOrder,
             urlSession: urlSession,
-            appAuthStore: CursorAppAuthStore(),
+            appAuthStore: CursorLocalAuthStores.linuxDefault,
             sessionStore: sessionStore,
             conditionalMutationCoordinator: .shared)
         #endif
@@ -822,7 +822,7 @@ public struct CursorStatusProbe: Sendable {
             browserDetection: browserDetection,
             browserCookieImportOrder: Self.defaultBrowserCookieImportOrder,
             urlSession: urlSession,
-            appAuthStore: CursorAppAuthStore(),
+            appAuthStore: CursorLocalAuthStores.linuxDefault,
             sessionStore: sessionStore,
             conditionalMutationCoordinator: conditionalMutationCoordinator)
         #endif

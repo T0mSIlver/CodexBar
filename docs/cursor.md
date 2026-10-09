@@ -12,13 +12,14 @@ The opt-in **Frontmost provider app** merged-icon source recognizes Cursor.app (
 
 Cursor can reuse Cursor.app's local session or a cursor.com browser session. On macOS, automatic mode prefers a usable
 Cursor.app session and falls back to cookies when the app token is missing, expired, invalid, or rejected. On Linux,
-automatic mode uses cached or stored cookies when available, then falls back to the signed-in Cursor app token because
-browser import is unavailable.
+automatic mode uses cached or stored cookies when available, then falls back to the signed-in Cursor app token, then to
+`cursor-agent`'s, because browser import is unavailable.
 
 ## Data sources + fallback order
 
 Manual cookie configuration is always the explicit override. The automatic order is Cursor.app → cached cookie → browser
-cookie import → stored session on macOS, and cached cookie → stored session → Cursor.app token on Linux. Explicit `web`
+cookie import → stored session on macOS, and cached cookie → stored session → Cursor.app token → `cursor-agent` token on
+Linux. Explicit `web`
 mode never reads Cursor.app credentials; macOS uses its cookie ladder, while Linux requires a configured manual cookie.
 
 1) **Cursor.app local auth** (first automatic source on macOS; Linux fallback)
@@ -99,7 +100,11 @@ Manual option:
 ## Linux CLI
 - Automatic usage (`codexbar usage --provider cursor`) supports the signed-in Cursor app on Linux after manual, cached, and
   stored sessions have been considered.
-- Authentication order: manual cookie header → cached session → stored session → Cursor app access token.
+- Authentication order: manual cookie header → cached session → stored session → Cursor app access token →
+  `cursor-agent` access token.
+- The `cursor-agent` token is the `accessToken` that `cursor-agent login` keeps in `cursor/auth.json` under the same
+  config home as the app database (absolute `$XDG_CONFIG_HOME`, else `~/.config`). It is used when the app has no usable
+  token, so a machine with only the Cursor CLI gets usage too. The file is read-only; CodexBar never refreshes it.
 - Linux requests use a reusable HTTP session with automatic cookie storage disabled, so a long-running `serve` process cannot replace the selected credential with cookies left by earlier responses.
 - The app token is read from absolute `$XDG_CONFIG_HOME/Cursor/User/globalStorage/state.vscdb`, then `$HOME/.config/...` when `HOME` is absolute, then the account home’s `.config/...`. Relative `XDG_CONFIG_HOME` / `HOME` values are ignored. The database is read-only; expired app tokens are not refreshed by CodexBar.
 - Cursor usage includes the Grok Bot weekly allowance and reset time when the account exposes it. Grok Bot endpoint failures do not hide Cursor usage.
