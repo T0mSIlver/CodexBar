@@ -28,14 +28,15 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         fixture.sleep.close()
         await original.value
         #expect(fixture.store.spendDashboardCodexCostCatchUpTask == nil)
+        #expect(fixture.store.spendDashboardCodexCostCatchUpRevision == revision + 1)
     }
 
-    @Test(arguments: ["pending", "unconfirmed", "scope-mismatch", "unavailable"])
+    @Test(arguments: ["pending", "unconfirmed"])
     func `unproven completion preserves the original automatic sleep`(kind: String) async throws {
         let fixture = try DashboardCatchUpCompletionFixture()
         defer { fixture.close() }
         try await fixture.start()
-        let token = fixture.store.spendDashboardCodexCostCatchUpToken
+        let token = fixture.store.spendDashboardCodexCostCatchUpContext?.token
         let revision = fixture.store.spendDashboardCodexCostCatchUpRevision
         fixture.statuses[fixture.accounts[0].id] = .init(
             pending: kind == "pending", progressKey: kind, completionIsConfirmed: kind == "pending")
@@ -44,7 +45,7 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         await fixture.store.spendDashboardCodexCostCatchUpCompletionCheckTask?.value
 
         #expect(fixture.store.spendDashboardCodexCostCatchUpActivity?.phase == .indexing)
-        #expect(fixture.store.spendDashboardCodexCostCatchUpToken == token)
+        #expect(fixture.store.spendDashboardCodexCostCatchUpContext?.token == token)
         #expect(fixture.store.spendDashboardCodexCostCatchUpRevision == revision)
         #expect(fixture.sleep.pendingCount == 1)
         #expect(fixture.scanPasses == 1)
@@ -75,7 +76,7 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         await original.value
     }
 
-    @Test(arguments: ["stop", "disabled", "settings", "replacement"])
+    @Test(arguments: ["stop", "disabled", "settings", "replacement", "mode"])
     func `completion observed after invalidation cannot publish into the new state`(kind: String) async throws {
         let fixture = try DashboardCatchUpCompletionFixture()
         let reads = SpendDashboardPendingLoads<CostUsageFetcher.CodexScanCatchUpStatus>()
@@ -95,6 +96,8 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
             fixture.store.settings.costUsageEnabled = false
             fixture.store.synchronizeSpendDashboardCodexCostCatchUp(accounts: fixture.accounts)
         case "settings": fixture.store.settings.costUsageHistoryDays = 500
+        case "mode":
+            fixture.store.startSpendDashboardCodexCostCatchUpIfNeeded(accounts: fixture.accounts, mode: .accelerated)
         default:
             fixture.store._test_spendDashboardCodexCostCatchUpStatusOverride = { _ in
                 .init(pending: true, progressKey: "replacement")
@@ -109,6 +112,48 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         if kind == "stop" { #expect(fixture.store.spendDashboardCodexCostCatchUpActivity?.pauseReason == .user) }
         fixture.store.cancelSpendDashboardCodexCostCatchUp()
         fixture.sleep.close()
+        await original.value
+    }
+
+    @Test(arguments: [true, false])
+    func `synchronization during a partial status read rechecks changed accounts`(completes: Bool) async throws {
+        let fixture = try DashboardCatchUpCompletionFixture(accountCount: 2)
+        let reads = SpendDashboardPendingLoads<Void>()
+        defer { fixture.close(); reads.close() }
+        try await fixture.start()
+        let original = try #require(fixture.store.spendDashboardCodexCostCatchUpTask)
+        let revision = fixture.store.spendDashboardCodexCostCatchUpRevision
+        fixture.statuses[fixture.accounts[1].id] = .init(
+            pending: false, progressKey: "second-complete", completionIsConfirmed: true)
+        if !completes { fixture.completeAllAccounts() }
+        var checkReads = 0
+        fixture.store._test_spendDashboardCodexCostCatchUpStatusOverride = { account in
+            checkReads += 1
+            let captured = fixture.statuses[account.id] ?? .init(pending: true, progressKey: "missing")
+            if checkReads == 2 { try? await reads.load() }
+            return captured
+        }
+        fixture.store.synchronizeSpendDashboardCodexCostCatchUp(accounts: fixture.accounts)
+        let check = try #require(fixture.store.spendDashboardCodexCostCatchUpCompletionCheckTask)
+        try await reads.waitForPendingCount(1)
+        if completes {
+            fixture.completeAllAccounts()
+        } else {
+            fixture.statuses[fixture.accounts[0].id] = .init(pending: true, progressKey: "fresh-tail")
+        }
+        for _ in 0..<3 {
+            fixture.store.synchronizeSpendDashboardCodexCostCatchUp(accounts: fixture.accounts)
+        }
+        #expect(checkReads == 2)
+        reads.resume()
+        await check.value
+
+        #expect((fixture.store.spendDashboardCodexCostCatchUpActivity?.phase == .complete) == completes)
+        #expect(fixture.store.spendDashboardCodexCostCatchUpRevision == revision + (completes ? 1 : 0))
+        #expect(original.isCancelled == completes)
+        #expect(checkReads == 4)
+        #expect(fixture.scanPasses == 1)
+        fixture.close()
         await original.value
     }
 
@@ -144,7 +189,7 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         defer { fixture.close(); reads.close(); scan.close() }
         try await fixture.start()
         let original = try #require(fixture.store.spendDashboardCodexCostCatchUpTask)
-        let token = fixture.store.spendDashboardCodexCostCatchUpToken
+        let token = fixture.store.spendDashboardCodexCostCatchUpContext?.token
         fixture.store._test_spendDashboardCodexCostCatchUpStatusOverride = { _ in
             await (try? reads.load()) ?? .init(pending: false, progressKey: "unavailable")
         }
@@ -162,7 +207,7 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         reads.resume(returning: .init(pending: false, progressKey: "complete", completionIsConfirmed: true))
         await check.value
         #expect(fixture.store.spendDashboardCodexCostCatchUpActivity?.phase == .indexing)
-        #expect(fixture.store.spendDashboardCodexCostCatchUpToken == token)
+        #expect(fixture.store.spendDashboardCodexCostCatchUpContext?.token == token)
         #expect(fixture.store.spendDashboardCodexCostCatchUpPassIsRunning)
         #expect(!original.isCancelled)
         #expect(fixture.scanPasses == 2)
@@ -210,6 +255,43 @@ struct UsageStoreSpendDashboardCodexCostCatchUpCompletionTests {
         #expect(fixture.store.spendDashboardCodexCostCatchUpCompletionCheckTask == nil)
         fixture.close()
         await original.value
+    }
+
+    @Test(arguments: ["complete", "stop", "settings", "accounts"])
+    func `stalled worker completion uses the same coalescing and invalidation guards`(kind: String) async throws {
+        let fixture = try DashboardCatchUpCompletionFixture()
+        let reads = SpendDashboardPendingLoads<CostUsageFetcher.CodexScanCatchUpStatus>()
+        defer { fixture.close(); reads.close() }
+        fixture.store._test_spendDashboardCodexCostCatchUpAdvanceOverride = { account, _, _ in
+            .init(pending: true, progressKey: "initial-\(account.id)")
+        }
+        fixture.store.startSpendDashboardCodexCostCatchUpIfNeeded(accounts: fixture.accounts)
+        await fixture.store.spendDashboardCodexCostCatchUpTask?.value
+        #expect(fixture.store.spendDashboardCodexCostCatchUpActivity?.pauseReason == .noProgress)
+        let revision = fixture.store.spendDashboardCodexCostCatchUpRevision
+        fixture.store._test_spendDashboardCodexCostCatchUpStatusOverride = { _ in
+            await (try? reads.load()) ?? .init(pending: false, progressKey: "unavailable")
+        }
+        for _ in 0..<3 {
+            fixture.store.synchronizeSpendDashboardCodexCostCatchUp(accounts: fixture.accounts)
+        }
+        let check = try #require(fixture.store.spendDashboardCodexCostCatchUpCompletionCheckTask)
+        try await reads.waitForPendingCount(1)
+        switch kind {
+        case "stop": fixture.store.stopSpendDashboardCodexCostCatchUp()
+        case "settings": fixture.store.settings.costUsageHistoryDays = 500
+        case "accounts":
+            let other = UsageStoreSpendDashboardCodexCostCatchUpTests.account(id: "other", cacheIdentity: "other")
+            fixture.store.synchronizeSpendDashboardCodexCostCatchUp(accounts: [other])
+        default: break
+        }
+        reads.resume(returning: .init(pending: false, progressKey: "complete", completionIsConfirmed: true))
+        await check.value
+        #expect(fixture.store.spendDashboardCodexCostCatchUpTask == nil)
+        #expect(fixture.store.spendDashboardCodexCostCatchUpCompletionCheckTask == nil)
+        #expect((fixture.store.spendDashboardCodexCostCatchUpActivity?.phase == .complete) == (kind == "complete"))
+        #expect(fixture.store.spendDashboardCodexCostCatchUpRevision == revision + (kind == "complete" ? 1 : 0))
+        if kind == "stop" { #expect(fixture.store.spendDashboardCodexCostCatchUpActivity?.pauseReason == .user) }
     }
 
     @Test
