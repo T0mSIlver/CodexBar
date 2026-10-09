@@ -3,9 +3,10 @@ import Foundation
 /// Replays the cursor and erase operations used by Claude's usage/status panels, without terminal history.
 struct ClaudeCLIScreen {
     static let columns = 160
-    // Claude 2.1.294's /usage panel adds session stats above the quota rows and an insights list below them, about
-    // 100 rows in all. Rows that scroll past the top are out of reach of the diff redraws and missing from the
-    // replayed screen, "Current session" first, so keep the PTY well taller than the panel.
+    // Claude's /usage panel (2.1.270 to 2.1.294 at least) puts session stats above the quota rows and an insights
+    // list below them, about 100 rows for a heavy user. In the default inline renderer, rows that scroll past the top
+    // are out of reach of the diff redraws and missing from the replayed screen, "Current session" first, so keep
+    // the PTY well taller than the panel.
     static let rows = 200
     private static let maxParameter = max(Self.columns, Self.rows)
     private static let blank = Array(repeating: Character(" "), count: Self.columns)
