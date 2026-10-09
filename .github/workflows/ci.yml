@@ -117,13 +117,6 @@ jobs:
     # Intel pool and much shorter queues (see #2585 for the measurements).
     runs-on: macos-26
     timeout-minutes: 90
-    strategy:
-      fail-fast: false
-      matrix:
-        # Two serial shards avoid a third cold build while direct launch is unverified.
-        # Leave timeout headroom for runner variance and suite growth.
-        shard-index: [0, 1]
-        shard-count: [2]
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
@@ -165,7 +158,6 @@ jobs:
           swift package --version
 
       - name: Check app locales and Swift formatting
-        if: ${{ matrix.shard-index == 0 }}
         run: ./Scripts/lint.sh lint-macos
 
       - name: Verify cached inputs and record current checkout
@@ -186,70 +178,50 @@ jobs:
         timeout-minutes: 75
         run: |
           touch "$RUNNER_TEMP/codexbar-tests-started"
-          echo "Hosted tests use two serial SwiftPM shards; direct runtime validation is nonblocking."
+          echo "Hosted tests run the complete inventory with two verified direct workers."
           CODEXBAR_TEST_GROUP_SIZE=8 \
             CODEXBAR_TEST_SUITE_TIMEOUT=120 \
             CODEXBAR_TEST_RETRY_NON_TIMEOUT_FAILURES=0 \
-            CODEXBAR_TEST_SHARD_INDEX=${{ matrix.shard-index }} \
-            CODEXBAR_TEST_SHARD_COUNT=${{ matrix.shard-count }} \
-            ./Scripts/test.sh
-
-      - name: Direct runtime smoke test (nonblocking)
-        id: direct-probe
-        if: ${{ success() && matrix.shard-index == 0 }}
-        continue-on-error: true
-        timeout-minutes: 5
-        run: |
-          CODEXBAR_TEST_GROUP_SIZE=8 \
-            CODEXBAR_TEST_SUITE_TIMEOUT=120 \
-            CODEXBAR_TEST_RETRY_NON_TIMEOUT_FAILURES=0 \
-            CODEXBAR_TEST_SHARD_INDEX=${{ matrix.shard-index }} \
-            CODEXBAR_TEST_SHARD_COUNT=${{ matrix.shard-count }} \
-            ./Scripts/test.sh --direct-workers 2 --limit-groups 1
+            ./Scripts/test.sh --direct-workers 2
 
       - name: Provider plugin engine A/B goldens
-        if: ${{ matrix.shard-index == 0 }}
         run: ./Scripts/test-plugin-engines.sh
 
       - name: Verify checkout before publishing compiled cache
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.shard-index == 0 }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: git diff --exit-code HEAD --
 
       - name: Save successful main build for subsequent checkouts
-        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && matrix.shard-index == 0 && steps.compiled-cache.outputs.cache-hit != 'true' }}
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && steps.compiled-cache.outputs.cache-hit != 'true' }}
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: .build
           key: ${{ steps.build-context.outputs.prefix }}${{ github.sha }}
 
       - name: Collect crash reports on failure
-        if: ${{ failure() || steps.direct-probe.outcome == 'failure' }}
+        if: ${{ failure() }}
         shell: bash
         run: |
           if [[ -f "$RUNNER_TEMP/codexbar-tests-started" ]]; then
             python3 Scripts/swift_test_diagnostics.py --since "$RUNNER_TEMP/codexbar-tests-started"
           fi
 
-      - name: Summarize macOS shard
+      - name: Summarize macOS tests
         if: ${{ always() }}
         shell: bash
         env:
-          SHARD_INDEX: ${{ matrix.shard-index }}
-          SHARD_COUNT: ${{ matrix.shard-count }}
-          RUNS_LINT_MACOS: ${{ matrix.shard-index == 0 }}
           COMPILED_CACHE_KEY: ${{ steps.compiled-cache.outputs.cache-matched-key }}
         run: |
           set -euo pipefail
-          display_shard_index=$((SHARD_INDEX + 1))
           xcode_version="$(/usr/bin/xcodebuild -version 2>/dev/null | tr '\n' ' ' || true)"
           {
-            printf '### macOS Swift shard\n\n'
+            printf '### macOS Swift tests\n\n'
             printf '| Field | Value |\n'
             printf '| --- | --- |\n'
-            printf '| Shard | `%s / %s` |\n' "$display_shard_index" "$SHARD_COUNT"
+            printf '| Coverage | Full discovered inventory |\n'
+            printf '| Workers | `2` direct workers on one runner |\n'
             printf '| Runner | `%s` |\n' "${RUNNER_NAME:-unknown}"
             printf '| Xcode | `%s` |\n' "${xcode_version:-unknown}"
-            printf '| Runs lint-macos | `%s` |\n' "$RUNS_LINT_MACOS"
             printf '| Compiled cache | `%s` |\n' "${COMPILED_CACHE_KEY:-miss}"
           } >> "$GITHUB_STEP_SUMMARY"
 
