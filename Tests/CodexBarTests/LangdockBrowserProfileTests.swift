@@ -41,10 +41,33 @@ struct LangdockBrowserProfileTests {
 
     @Test
     func `old Edge configuration is preserved and unsupported browsers fail closed`() throws {
-        var config = ProviderConfig(id: .langdock)
-        config.browserProfileID = LangdockPluginTests.profile.profileID
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("LangdockLegacy-\(UUID())")
+        defer { try? FileManager.default.removeItem(at: root) }
+        let store = CodexBarConfigStore(fileURL: root.appendingPathComponent("config.json"))
+        let legacy = """
+        {"version":1,"providers":[{"id":"langdock","enabled":true,"source":"web","cookieSource":"auto",
+        "browserProfileID":"/synthetic/Edge/Profile 2"}]}
+        """
+        try store.saveEncodedData(Data(legacy.utf8))
+        let loaded = try #require(try store.load())
         let section = LangdockProviderDescriptor.descriptor.settingsSection
         let browsers = try #require(section.selectedProfileBrowsers)
+        for roundTrip in [false, true] {
+            if roundTrip { try store.save(loaded) }
+            let saved = try #require(try store.load())
+            let config = try #require(saved.providerConfig(for: .langdock))
+            #expect(config.browserID == nil)
+            #expect(config.browserProfileID == LangdockPluginTests.profile.profileID)
+            let cli = try TokenAccountCLIContext(
+                selection: .init(label: nil, index: nil, allAccounts: false),
+                config: saved,
+                verbose: false,
+                baseEnvironment: [:],
+                configStore: store)
+            #expect(try section.cookieSettings(from: #require(cli.settingsSnapshot(for: .langdock, account: nil)))?
+                .selectedBrowserProfile == LangdockPluginTests.profile)
+        }
+        var config = try #require(loaded.providerConfig(for: .langdock))
         #expect(ProviderBrowserProfile.selected(in: config, browsers: browsers) == LangdockPluginTests.profile)
         #expect(ProviderBrowserProfile.selected(in: nil, browsers: browsers)?.profileID.isEmpty == true)
         for invalid in ["firefox", "", "Chrome"] {
@@ -58,6 +81,21 @@ struct LangdockBrowserProfileTests {
         let malformed = try JSONDecoder().decode(ProviderConfig.self, from: Data(
             #"{"id":"langdock","browserID":42,"browserProfileID":"/synthetic/Edge/Profile 2"}"#.utf8))
         #expect(ProviderBrowserProfile.selected(in: malformed, browsers: browsers) == nil)
+    }
+
+    @Test
+    func `single browser registration API remains compatible`() throws {
+        let section = ProviderSettingsSectionRegistration(
+            LangdockProviderSettingsKey.self,
+            selectedProfileBrowser: "edge")
+        #expect(section.selectedProfileBrowser == "edge")
+        #expect(section.selectedProfileBrowsers == ["edge"])
+        #expect(LangdockProviderDescriptor.descriptor.settingsSection.selectedProfileBrowser == nil)
+        var config = ProviderConfig(id: .langdock)
+        config.browserProfileID = LangdockPluginTests.profile.profileID
+        let contribution = try #require(section.credentialContribution(context: .init(config: config, account: nil)))
+        #expect(section.cookieSettings(from: .init(contributions: [contribution]))?.selectedBrowserProfile
+            == LangdockPluginTests.profile)
     }
 
     @MainActor

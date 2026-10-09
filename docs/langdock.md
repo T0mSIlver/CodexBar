@@ -20,6 +20,9 @@ provider is disabled by default and supports Microsoft Edge, Google Chrome, and 
 3. Enable Langdock, then refresh. The CLI equivalent is
    `codexbar usage --provider langdock --source web`.
 
+`codexbar cookie refresh --provider langdock` uses the configured browser and profile. Edge and Chrome
+require `--allow-keychain-prompt` for an explicit interactive retry; Safari does not require that flag.
+
 CodexBar selects that one profile and reads its applicable `langdock.com` and `app.langdock.com`
 cookies. Decrypted session values stay in memory and are not cached by CodexBar. The existing
 SweetCookieKit importer uses temporary copies of the browser cookie database while reading it;
