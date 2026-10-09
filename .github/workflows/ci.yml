@@ -585,6 +585,9 @@ jobs:
           source Scripts/test_environment.sh
           swift test --parallel
 
+      - name: Verify procfs teardown releases empty read buffers
+        run: python3 Scripts/test_linux_procfs_reads.py
+
       - name: Smoke test CodexBarCLI
         shell: bash
         run: |
