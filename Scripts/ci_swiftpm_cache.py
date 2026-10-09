@@ -13,7 +13,7 @@ import stat
 import subprocess
 import time
 
-SCHEMA = 1
+SCHEMA = 2
 DEFAULT_METADATA = ".build/ci-inputs.json"
 MAX_METADATA_BYTES = 16 * 1024 * 1024
 LANES = ("macos26-arm64", "macos15-arm64")
@@ -77,13 +77,13 @@ def tracked_files(root):
         relative_path(path)
         if stage != "0":
             raise ValueError("unmerged inputs cannot seed a build cache")
-        if mode in {"100644", "100755"}:
+        if mode in {"100644", "100755", "120000"}:
             files[path] = mode
     return files
 
 
-def open_input(root_fd, name):
-    """Open every component without following symlinks, including ancestors."""
+def open_parent(root_fd, name):
+    """Open a parent directory without following any symlink ancestors."""
     parts = relative_path(name)
     parent = os.dup(root_fd)
     try:
@@ -91,11 +91,44 @@ def open_input(root_fd, name):
             child = os.open(part, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=parent)
             os.close(parent)
             parent = child
-        fd = os.open(parts[-1], os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
+        return parent, parts[-1]
+    except BaseException:
+        os.close(parent)
+        raise
+
+
+def open_input(root_fd, name):
+    """Open every component without following symlinks, including ancestors."""
+    parent, leaf = open_parent(root_fd, name)
+    try:
+        fd = os.open(leaf, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK, dir_fd=parent)
         if not stat.S_ISREG(os.fstat(fd).st_mode):
             os.close(fd)
             raise ValueError("input is not a regular file")
         return fd
+    finally:
+        os.close(parent)
+
+
+def symlink_record(root_fd, name):
+    """Hash the link payload itself; never read or modify its target."""
+    parent, leaf = open_parent(root_fd, name)
+    try:
+        before = os.stat(leaf, dir_fd=parent, follow_symlinks=False)
+        if not stat.S_ISLNK(before.st_mode):
+            raise ValueError("input is not a symlink")
+        payload = os.fsencode(os.readlink(leaf, dir_fd=parent))
+        after = os.stat(leaf, dir_fd=parent, follow_symlinks=False)
+        identity = ("st_dev", "st_ino", "st_size", "st_mtime_ns", "st_ctime_ns")
+        if any(getattr(before, key) != getattr(after, key) for key in identity):
+            raise ValueError("symlink changed while hashing")
+        return {
+            "sha256": hashlib.sha256(payload).hexdigest(),
+            "size": len(payload),
+            "mtime_ns": after.st_mtime_ns,
+            "git_mode": "120000",
+            "file_mode": stat.S_IMODE(after.st_mode),
+        }
     finally:
         os.close(parent)
 
@@ -127,6 +160,9 @@ def snapshot(root, metadata, context):
     try:
         for name, mode in tracked_files(root).items():
             try:
+                if mode == "120000":
+                    files[name] = symlink_record(root_fd, name)
+                    continue
                 fd = open_input(root_fd, name)
                 try:
                     files[name] = input_record(fd, mode)
@@ -185,7 +221,7 @@ def read_metadata(root_fd, metadata, context):
             raise ValueError("invalid input record")
         if not re.fullmatch(r"[a-f0-9]{64}", str(record.get("sha256", ""))):
             raise ValueError("invalid input digest")
-        if record.get("git_mode") not in {"100644", "100755"}:
+        if record.get("git_mode") not in {"100644", "100755", "120000"}:
             raise ValueError("invalid input mode")
         if type(record.get("size")) is not int or record["size"] < 0:
             raise ValueError("invalid input size")
@@ -199,7 +235,7 @@ def read_metadata(root_fd, metadata, context):
 def restore(root, metadata, context):
     root = Path(root).resolve()
     root_fd = os.open(root, os.O_RDONLY | os.O_DIRECTORY)
-    result = {"restored": 0, "changed": 0, "missing": 0, "unavailable": 0}
+    result = {"restored": 0, "changed": 0, "missing": 0, "unavailable": 0, "verified_symlinks": 0}
     try:
         try:
             files = read_metadata(root_fd, metadata, context)
@@ -217,7 +253,25 @@ def restore(root, metadata, context):
             # Reuse checkouts, but clean products when the input graph changes.
             return {**result, "missing": len(current_inputs - cached_inputs),
                     "removed": len(cached_inputs - current_inputs), "fallback": "build input paths changed"}
+
+        # Equal target sizes/mtimes can hide a retargeted link from SwiftPM.
+        # Check every package symlink and type transition before restoring any mtimes.
+        for name in sorted(current_inputs):
+            if "120000" not in {tracked[name], files[name]["git_mode"]}:
+                continue
+            if tracked[name] != files[name]["git_mode"]:
+                return {**result, "changed": 1, "fallback": "build input symlink type changed"}
+            try:
+                current = symlink_record(root_fd, name)
+            except (OSError, ValueError):
+                return {**result, "unavailable": 1, "fallback": "build input symlink could not be verified"}
+            if any(current[key] != files[name][key] for key in ("sha256", "size")):
+                return {**result, "changed": 1, "fallback": "build input symlink target changed"}
+            result["verified_symlinks"] += 1
+
         for name, git_mode in tracked.items():
+            if git_mode == "120000":
+                continue
             cached = files.get(name)
             if cached is None:
                 result["missing"] += 1

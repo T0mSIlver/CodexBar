@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -145,7 +146,7 @@ class SwiftPMCacheTests(unittest.TestCase):
                 self.assertEqual(path.stat().st_mtime_ns, new_ns)
 
     def test_invalid_records_reject_entire_metadata_before_any_write(self):
-        for key, value in (("sha256", "bad"), ("mtime_ns", -1), ("mtime_ns", True), ("git_mode", "120000"), ("file_mode", -1), ("size", -1)):
+        for key, value in (("sha256", "bad"), ("mtime_ns", -1), ("mtime_ns", True), ("git_mode", "160000"), ("file_mode", -1), ("size", -1)):
             with self.subTest(key=key, value=value):
                 cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
                 path = self.write("Sources/Main.swift", "original\n")
@@ -189,13 +190,135 @@ class SwiftPMCacheTests(unittest.TestCase):
         metadata.write_text("[" * 2000 + "0" + "]" * 2000)
         self.assertIn("fallback", self.result())
 
-    def test_git_tracked_symlinks_are_not_snapshotted(self):
-        link = self.root / "TrackedLink.swift"
-        link.symlink_to(self.root / "Sources/Main.swift")
-        self.git("add", "TrackedLink.swift")
+    def test_tracked_symlinks_record_payload_without_reading_or_writing_targets(self):
+        with tempfile.TemporaryDirectory(prefix="ci-link-outside-") as external:
+            outside = Path(external) / "Main.swift"
+            outside.write_text("outside content\n")
+            outside_ns = outside.stat().st_mtime_ns
+            name = "TestsPlugin/Main.swift"
+            link = self.root / name
+            link.parent.mkdir()
+            link.symlink_to(outside)
+            self.git("add", name)
+            cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
+            record = json.loads((self.root / cache.DEFAULT_METADATA).read_text())["files"][name]
+            self.assertEqual(record["git_mode"], "120000")
+            self.assertEqual(record["sha256"], hashlib.sha256(os.fsencode(str(outside))).hexdigest())
+            self.assertEqual(record["size"], len(os.fsencode(str(outside))))
+            self.assertNotIn("fallback", self.result())
+            self.assertEqual(outside.stat().st_mtime_ns, outside_ns)
+            self.assertEqual(outside.read_text(), "outside content\n")
+
+    def test_unchanged_plugin_symlinks_allow_regular_input_timestamp_restoration(self):
+        name = "TestsPlugin/Main.swift"
+        link = self.root / name
+        link.parent.mkdir()
+        link.symlink_to("../Sources/Main.swift")
+        self.git("add", name)
         cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
-        files = json.loads((self.root / cache.DEFAULT_METADATA).read_text())["files"]
-        self.assertNotIn("TrackedLink.swift", files)
+        link.unlink()
+        link.symlink_to("../Sources/Main.swift")
+        link_ns = link.lstat().st_mtime_ns
+        for name in self.names:
+            self.write(name, "original\n")
+        result = self.result()
+        self.assertNotIn("fallback", result)
+        self.assertEqual(result["verified_symlinks"], 1)
+        self.assertEqual(result["restored"], len(self.names))
+        self.assertEqual(link.lstat().st_mtime_ns, link_ns)
+        self.assertEqual((self.root / "Sources/Main.swift").stat().st_mtime_ns, self.original_ns)
+
+    def test_same_size_retargeted_package_links_require_clean_before_any_timestamp_writes(self):
+        for target, value in (("old", "original\n"), ("new", "modified\n")):
+            self.write(f"Fixtures/{target}.swift", value, self.original_ns)
+        self.git("add", "Fixtures")
+        for prefix in cache.BUILD_INPUT_PREFIXES:
+            for staged in (False, True):
+                with self.subTest(prefix=prefix, staged=staged):
+                    name = prefix + "Linked.swift"
+                    link = self.root / name
+                    link.parent.mkdir(parents=True, exist_ok=True)
+                    link.symlink_to("../Fixtures/old.swift")
+                    self.git("add", name)
+                    cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
+                    source = self.write("Sources/Main.swift", "original\n")
+                    fresh_ns = source.stat().st_mtime_ns
+                    link.unlink()
+                    link.symlink_to("../Fixtures/new.swift")
+                    if staged:
+                        self.git("add", name)
+                    result = self.result()
+                    self.assertEqual(result["fallback"], "build input symlink target changed")
+                    self.assertEqual(result["changed"], 1)
+                    self.assertEqual(result["restored"], 0)
+                    self.assertEqual(source.stat().st_mtime_ns, fresh_ns)
+                    self.git("rm", "--cached", "--force", "--", name)
+                    link.unlink()
+
+    def test_added_and_removed_package_symlinks_require_clean(self):
+        name = "TestsPlugin/Main.swift"
+        link = self.root / name
+        link.parent.mkdir()
+        link.symlink_to("../Sources/Main.swift")
+        self.git("add", name)
+        added = self.result()
+        self.assertEqual(added["fallback"], "build input paths changed")
+        self.assertEqual(added["missing"], 1)
+        self.assertEqual(added["restored"], 0)
+        cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
+        self.git("rm", "--force", "--", name)
+        removed = self.result()
+        self.assertEqual(removed["fallback"], "build input paths changed")
+        self.assertEqual(removed["removed"], 1)
+        self.assertEqual(removed["restored"], 0)
+
+    def test_package_input_type_changes_require_clean_before_timestamp_writes(self):
+        path = self.root / "Sources/Main.swift"
+        for mode in ("symlink", "regular"):
+            with self.subTest(mode=mode):
+                path.unlink()
+                if mode == "symlink":
+                    path.symlink_to("probe.c")
+                else:
+                    self.write("Sources/Main.swift", "original\n")
+                self.git("add", "Sources/Main.swift")
+                unchanged = self.write("Package.swift", "original\n")
+                fresh_ns = unchanged.stat().st_mtime_ns
+                result = self.result()
+                self.assertEqual(result["fallback"], "build input symlink type changed")
+                self.assertEqual(result["restored"], 0)
+                self.assertEqual(unchanged.stat().st_mtime_ns, fresh_ns)
+                cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
+
+    def test_unverifiable_link_or_link_ancestor_requires_clean_without_outside_writes(self):
+        name = "TestsPlugin/Main.swift"
+        link = self.root / name
+        link.parent.mkdir()
+        link.symlink_to("../Sources/Main.swift")
+        self.git("add", name)
+        cache.snapshot(self.root, cache.DEFAULT_METADATA, "test-context")
+        link.unlink()
+        link.write_text("not a symlink\n")
+        self.assertEqual(self.result()["unavailable"], 1)
+        self.assertEqual(self.result()["restored"], 0)
+        link.unlink()
+        link.parent.rmdir()
+        with tempfile.TemporaryDirectory(prefix="ci-link-parent-") as external:
+            outside = Path(external) / "Main.swift"
+            outside.symlink_to(self.root / "Sources/Main.swift")
+            outside_ns = outside.lstat().st_mtime_ns
+            link.parent.symlink_to(external, target_is_directory=True)
+            self.assertEqual(self.result()["unavailable"], 1)
+            self.assertEqual(self.result()["restored"], 0)
+            self.assertEqual(outside.lstat().st_mtime_ns, outside_ns)
+
+    def test_metadata_from_before_symlink_verification_requires_clean(self):
+        path = self.write("Sources/Main.swift", "original\n")
+        fresh_ns = path.stat().st_mtime_ns
+        self.metadata(lambda document: document.update({"schema": 1}))
+        self.assertEqual(self.result()["fallback"], "metadata schema mismatch")
+        self.assertEqual(self.result()["restored"], 0)
+        self.assertEqual(path.stat().st_mtime_ns, fresh_ns)
 
     def test_context_changes_with_toolchain_sdk_flags_and_dependencies(self):
         for name in cache.CONTEXT_INPUTS:
