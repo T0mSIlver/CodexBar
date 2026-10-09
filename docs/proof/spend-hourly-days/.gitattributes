@@ -1,0 +1,3 @@
+# Keep the recorded diagnostic artifacts byte-identical to their receipt hashes.
+*.patch whitespace=-blank-at-eol
+fixture-launcher.swift whitespace=-blank-at-eof

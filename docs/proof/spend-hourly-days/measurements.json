@@ -1,0 +1,847 @@
+{
+  "kind": "Complete Release application; synthetic 365-day four-source data; ABBA order; native CUA hour/previous-day interactions",
+  "baseline_commit": "b0aa7fe0add90b06e3614328715d827f1c898a0f",
+  "fixed_executable_sha256": "6b54b745733d115d70d3a9dab202104a8ef7123898c56357a147dadac5dd929f",
+  "only_controlled_switch": "CODEXBAR_DATE_CACHE_PROTOTYPE; precompute hourly-day array on immutable CurrencyGroup creation",
+  "fixture_sha256": "d2f6c01477641b22eb5e4149b0e6c7d56d5616f62fdb37ff9ed7effd1231246a",
+  "prototype_patch_sha256": "7b258ddcaefadc35811050e3cf21eaa4616cfac2fb7261894bee644dc18ee25f",
+  "measurements": [
+    {
+      "run": "ab-365-baseline-1",
+      "cached": false,
+      "operation": "native-hour-mode",
+      "date_index": {
+        "calls": 14,
+        "cpu_max_ms": 21.113708,
+        "cpu_p50_ms": 20.877167,
+        "cpu_p95_ms": 21.018583,
+        "cpu_sum_ms": 291.96758400000004,
+        "main_thread_calls": 14,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 21.126083,
+        "wall_p50_ms": 20.916708,
+        "wall_p95_ms": 21.078791,
+        "wall_sum_ms": 292.534623
+      },
+      "trend_init": {
+        "calls": 28,
+        "cpu_max_ms": 2.499792,
+        "cpu_p50_ms": 0.991208,
+        "cpu_p95_ms": 1.34325,
+        "cpu_sum_ms": 29.351790999999995,
+        "main_thread_calls": 28,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 2.501708,
+        "wall_p50_ms": 1.000875,
+        "wall_p95_ms": 1.344458,
+        "wall_sum_ms": 29.453125000000007
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 27,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-baseline-1",
+      "cached": false,
+      "operation": "native-previous-day",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 20.937583,
+        "cpu_p50_ms": 20.57975,
+        "cpu_p95_ms": 20.788208,
+        "cpu_sum_ms": 309.10683000000006,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 20.984875,
+        "wall_p50_ms": 20.584584,
+        "wall_p95_ms": 20.810084,
+        "wall_sum_ms": 309.26246
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.182916,
+        "cpu_p50_ms": 0.181333,
+        "cpu_p95_ms": 0.181333,
+        "cpu_sum_ms": 0.364249,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.183667,
+        "wall_p50_ms": 0.181584,
+        "wall_p95_ms": 0.181584,
+        "wall_sum_ms": 0.365251
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-baseline-1",
+      "cached": false,
+      "operation": "native-previous-day-repeat",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 20.753875,
+        "cpu_p50_ms": 20.595,
+        "cpu_p95_ms": 20.6925,
+        "cpu_sum_ms": 308.835668,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 20.770375,
+        "wall_p50_ms": 20.60225,
+        "wall_p95_ms": 20.709375,
+        "wall_sum_ms": 308.91966499999995
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.18325,
+        "cpu_p50_ms": 0.176291,
+        "cpu_p95_ms": 0.176291,
+        "cpu_sum_ms": 0.359541,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.1835,
+        "wall_p50_ms": 0.176958,
+        "wall_p95_ms": 0.176958,
+        "wall_sum_ms": 0.360458
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-cached-1",
+      "cached": true,
+      "operation": "native-hour-mode",
+      "date_index": {
+        "calls": 14,
+        "cpu_max_ms": 0.0005,
+        "cpu_p50_ms": 0.000125,
+        "cpu_p95_ms": 0.00025,
+        "cpu_sum_ms": 0.0020420000000000004,
+        "main_thread_calls": 14,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 0.001041,
+        "wall_p50_ms": 0.000209,
+        "wall_p95_ms": 0.000458,
+        "wall_sum_ms": 0.004414
+      },
+      "trend_init": {
+        "calls": 4,
+        "cpu_max_ms": 0.181042,
+        "cpu_p50_ms": 0.167667,
+        "cpu_p95_ms": 0.174375,
+        "cpu_sum_ms": 0.690084,
+        "main_thread_calls": 4,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.181792,
+        "wall_p50_ms": 0.168375,
+        "wall_p95_ms": 0.1745,
+        "wall_sum_ms": 0.69225
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 3,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-cached-1",
+      "cached": true,
+      "operation": "native-previous-day",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 0.000792,
+        "cpu_p50_ms": 0.000125,
+        "cpu_p95_ms": 0.000209,
+        "cpu_sum_ms": 0.0025020000000000008,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 0.001125,
+        "wall_p50_ms": 0.000209,
+        "wall_p95_ms": 0.000667,
+        "wall_sum_ms": 0.005000999999999999
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.219458,
+        "cpu_p50_ms": 0.182167,
+        "cpu_p95_ms": 0.182167,
+        "cpu_sum_ms": 0.401625,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.228042,
+        "wall_p50_ms": 0.18225,
+        "wall_p95_ms": 0.18225,
+        "wall_sum_ms": 0.410292
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-cached-1",
+      "cached": true,
+      "operation": "native-previous-day-repeat",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 0.000834,
+        "cpu_p50_ms": 8.3e-05,
+        "cpu_p95_ms": 0.000166,
+        "cpu_sum_ms": 0.0022480000000000004,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 0.00125,
+        "wall_p50_ms": 0.000209,
+        "wall_p95_ms": 0.000458,
+        "wall_sum_ms": 0.004624999999999999
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.198125,
+        "cpu_p50_ms": 0.178041,
+        "cpu_p95_ms": 0.178041,
+        "cpu_sum_ms": 0.376166,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.198625,
+        "wall_p50_ms": 0.178125,
+        "wall_p95_ms": 0.178125,
+        "wall_sum_ms": 0.37675000000000003
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-cached-2",
+      "cached": true,
+      "operation": "native-hour-mode",
+      "date_index": {
+        "calls": 14,
+        "cpu_max_ms": 0.000333,
+        "cpu_p50_ms": 8.4e-05,
+        "cpu_p95_ms": 0.000292,
+        "cpu_sum_ms": 0.0019180000000000002,
+        "main_thread_calls": 14,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 0.001125,
+        "wall_p50_ms": 0.000209,
+        "wall_p95_ms": 0.000458,
+        "wall_sum_ms": 0.004499999999999999
+      },
+      "trend_init": {
+        "calls": 4,
+        "cpu_max_ms": 1.024083,
+        "cpu_p50_ms": 0.1805,
+        "cpu_p95_ms": 0.190084,
+        "cpu_sum_ms": 1.5677500000000002,
+        "main_thread_calls": 4,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 1.024625,
+        "wall_p50_ms": 0.181167,
+        "wall_p95_ms": 0.190583,
+        "wall_sum_ms": 1.569583
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 3,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-cached-2",
+      "cached": true,
+      "operation": "native-previous-day",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 0.000834,
+        "cpu_p50_ms": 8.4e-05,
+        "cpu_p95_ms": 0.000291,
+        "cpu_sum_ms": 0.002415000000000001,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 0.001292,
+        "wall_p50_ms": 0.000209,
+        "wall_p95_ms": 0.0005,
+        "wall_sum_ms": 0.004914
+      },
+      "trend_init": {
+        "calls": 3,
+        "cpu_max_ms": 0.189708,
+        "cpu_p50_ms": 0.182792,
+        "cpu_p95_ms": 0.182792,
+        "cpu_sum_ms": 0.551875,
+        "main_thread_calls": 3,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.189834,
+        "wall_p50_ms": 0.183667,
+        "wall_p95_ms": 0.183667,
+        "wall_sum_ms": 0.553459
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 2,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-cached-2",
+      "cached": true,
+      "operation": "native-previous-day-repeat",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 0.002208,
+        "cpu_p50_ms": 0.000125,
+        "cpu_p95_ms": 0.000208,
+        "cpu_sum_ms": 0.004,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 0.003042,
+        "wall_p50_ms": 0.000291,
+        "wall_p95_ms": 0.000583,
+        "wall_sum_ms": 0.007415999999999999
+      },
+      "trend_init": {
+        "calls": 4,
+        "cpu_max_ms": 0.432,
+        "cpu_p50_ms": 0.209625,
+        "cpu_p95_ms": 0.228625,
+        "cpu_sum_ms": 1.078625,
+        "main_thread_calls": 4,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.433209,
+        "wall_p50_ms": 0.210458,
+        "wall_p95_ms": 0.22875,
+        "wall_sum_ms": 1.081917
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 3,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-baseline-2",
+      "cached": false,
+      "operation": "native-hour-mode",
+      "date_index": {
+        "calls": 14,
+        "cpu_max_ms": 23.382583,
+        "cpu_p50_ms": 21.985458,
+        "cpu_p95_ms": 23.230708,
+        "cpu_sum_ms": 309.284207,
+        "main_thread_calls": 14,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 23.50075,
+        "wall_p50_ms": 22.013375,
+        "wall_p95_ms": 23.270083,
+        "wall_sum_ms": 309.916043
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.181708,
+        "cpu_p50_ms": 0.178667,
+        "cpu_p95_ms": 0.178667,
+        "cpu_sum_ms": 0.360375,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.182208,
+        "wall_p50_ms": 0.178792,
+        "wall_p95_ms": 0.178792,
+        "wall_sum_ms": 0.361
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-baseline-2",
+      "cached": false,
+      "operation": "native-previous-day",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 22.328833,
+        "cpu_p50_ms": 20.969667,
+        "cpu_p95_ms": 22.093166,
+        "cpu_sum_ms": 317.64649999999995,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 22.334167,
+        "wall_p50_ms": 21.051625,
+        "wall_p95_ms": 22.093292,
+        "wall_sum_ms": 317.945336
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.185708,
+        "cpu_p50_ms": 0.173625,
+        "cpu_p95_ms": 0.173625,
+        "cpu_sum_ms": 0.359333,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.186292,
+        "wall_p50_ms": 0.173792,
+        "wall_p95_ms": 0.173792,
+        "wall_sum_ms": 0.360084
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    },
+    {
+      "run": "ab-365-baseline-2",
+      "cached": false,
+      "operation": "native-previous-day-repeat",
+      "date_index": {
+        "calls": 15,
+        "cpu_max_ms": 21.595333,
+        "cpu_p50_ms": 20.690291,
+        "cpu_p95_ms": 21.199583,
+        "cpu_sum_ms": 310.932912,
+        "main_thread_calls": 15,
+        "rows_max": 35020,
+        "rows_min": 35020,
+        "wall_max_ms": 21.625542,
+        "wall_p50_ms": 20.69375,
+        "wall_p95_ms": 21.227208,
+        "wall_sum_ms": 311.15395900000004
+      },
+      "trend_init": {
+        "calls": 2,
+        "cpu_max_ms": 0.202833,
+        "cpu_p50_ms": 0.171084,
+        "cpu_p95_ms": 0.171084,
+        "cpu_sum_ms": 0.37391700000000005,
+        "main_thread_calls": 2,
+        "rows_max": 36480,
+        "rows_min": 36480,
+        "wall_max_ms": 0.203,
+        "wall_p50_ms": 0.17175,
+        "wall_p95_ms": 0.17175,
+        "wall_sum_ms": 0.37475
+      },
+      "group": [
+        {
+          "daily_points": 1460,
+          "hourly_points": 35020,
+          "providers": 4,
+          "sessions": 50,
+          "total_cost": 2101.1400000000017,
+          "total_tokens": null
+        }
+      ],
+      "view_counts": {
+        "trend-chart-body": 1,
+        "trend-panel-body": 1
+      }
+    }
+  ],
+  "summary": [
+    {
+      "operation": "native-hour-mode",
+      "baseline": {
+        "samples": 2,
+        "calls": [
+          14,
+          14
+        ],
+        "cpu_sum_ms": [
+          291.96758400000004,
+          309.284207
+        ],
+        "wall_sum_ms": [
+          292.534623,
+          309.916043
+        ],
+        "cpu_median_ms": 300.6258955,
+        "wall_median_ms": 301.225333
+      },
+      "cached": {
+        "samples": 2,
+        "calls": [
+          14,
+          14
+        ],
+        "cpu_sum_ms": [
+          0.0020420000000000004,
+          0.0019180000000000002
+        ],
+        "wall_sum_ms": [
+          0.004414,
+          0.004499999999999999
+        ],
+        "cpu_median_ms": 0.0019800000000000004,
+        "wall_median_ms": 0.004456999999999999
+      }
+    },
+    {
+      "operation": "native-previous-day",
+      "baseline": {
+        "samples": 2,
+        "calls": [
+          15,
+          15
+        ],
+        "cpu_sum_ms": [
+          309.10683000000006,
+          317.64649999999995
+        ],
+        "wall_sum_ms": [
+          309.26246,
+          317.945336
+        ],
+        "cpu_median_ms": 313.376665,
+        "wall_median_ms": 313.60389799999996
+      },
+      "cached": {
+        "samples": 2,
+        "calls": [
+          15,
+          15
+        ],
+        "cpu_sum_ms": [
+          0.0025020000000000008,
+          0.002415000000000001
+        ],
+        "wall_sum_ms": [
+          0.005000999999999999,
+          0.004914
+        ],
+        "cpu_median_ms": 0.0024585000000000006,
+        "wall_median_ms": 0.0049575
+      }
+    },
+    {
+      "operation": "native-previous-day-repeat",
+      "baseline": {
+        "samples": 2,
+        "calls": [
+          15,
+          15
+        ],
+        "cpu_sum_ms": [
+          308.835668,
+          310.932912
+        ],
+        "wall_sum_ms": [
+          308.91966499999995,
+          311.15395900000004
+        ],
+        "cpu_median_ms": 309.88428999999996,
+        "wall_median_ms": 310.036812
+      },
+      "cached": {
+        "samples": 2,
+        "calls": [
+          15,
+          15
+        ],
+        "cpu_sum_ms": [
+          0.0022480000000000004,
+          0.004
+        ],
+        "wall_sum_ms": [
+          0.004624999999999999,
+          0.007415999999999999
+        ],
+        "cpu_median_ms": 0.003124,
+        "wall_median_ms": 0.006020499999999999
+      }
+    }
+  ],
+  "compatibility_comparisons": [
+    {
+      "index": 0,
+      "zone": "Asia/Shanghai",
+      "period": "all",
+      "day_count": 365,
+      "all_equal": true
+    },
+    {
+      "index": 1,
+      "zone": "GMT",
+      "period": "all",
+      "day_count": 365,
+      "all_equal": true
+    },
+    {
+      "index": 2,
+      "zone": "America/New_York",
+      "period": "all",
+      "day_count": 365,
+      "all_equal": true
+    },
+    {
+      "index": 3,
+      "zone": "Australia/Lord_Howe",
+      "period": "all",
+      "day_count": 365,
+      "all_equal": true
+    },
+    {
+      "index": 4,
+      "zone": "Australia/Lord_Howe",
+      "period": "rolling:30",
+      "day_count": 30,
+      "all_equal": true
+    },
+    {
+      "index": 5,
+      "zone": "Australia/Lord_Howe",
+      "period": "rolling:30",
+      "day_count": 1,
+      "all_equal": true
+    },
+    {
+      "index": 6,
+      "zone": "Australia/Lord_Howe",
+      "period": "rolling:30",
+      "day_count": 30,
+      "all_equal": true
+    },
+    {
+      "index": 7,
+      "zone": "Australia/Lord_Howe",
+      "period": "rolling:7",
+      "day_count": 7,
+      "all_equal": true
+    },
+    {
+      "index": 8,
+      "zone": "Australia/Lord_Howe",
+      "period": "month-to-date",
+      "day_count": 5,
+      "all_equal": true
+    },
+    {
+      "index": 9,
+      "zone": "Asia/Shanghai",
+      "period": "month-to-date",
+      "day_count": 5,
+      "all_equal": true
+    },
+    {
+      "index": 10,
+      "zone": "Asia/Shanghai",
+      "period": "all",
+      "day_count": 365,
+      "all_equal": true
+    }
+  ],
+  "measurement_limits": [
+    "Measures date-index function thread CPU and wall cost, not full click-to-paint time, FPS, hitches or total app CPU",
+    "Precomputation cost moves to group creation and is included inside rebuild-model timing; it is not eliminated",
+    "Data is synthetic 35,020 hourly points, not measured size of user history",
+    "Compatibility covers supplied periods/time zones/selected-day contexts and native day navigation; broader product regressions are not completed",
+    "No product branch change, installed app update or PR was made"
+  ],
+  "initial_group_creation_context": [
+    {
+      "run": "ab-365-baseline-1",
+      "cached": false,
+      "initial_rebuild_model": {
+        "calls": 2,
+        "cpu_max_ms": 62.201542,
+        "cpu_p50_ms": 0.075833,
+        "cpu_p95_ms": 0.075833,
+        "cpu_sum_ms": 62.277375000000006,
+        "main_thread_calls": 2,
+        "rows_max": 0,
+        "rows_min": 0,
+        "wall_max_ms": 62.221583,
+        "wall_p50_ms": 0.076333,
+        "wall_p95_ms": 0.076333,
+        "wall_sum_ms": 62.297916
+      }
+    },
+    {
+      "run": "ab-365-cached-1",
+      "cached": true,
+      "initial_rebuild_model": {
+        "calls": 2,
+        "cpu_max_ms": 89.156333,
+        "cpu_p50_ms": 0.045042,
+        "cpu_p95_ms": 0.045042,
+        "cpu_sum_ms": 89.201375,
+        "main_thread_calls": 2,
+        "rows_max": 0,
+        "rows_min": 0,
+        "wall_max_ms": 89.196625,
+        "wall_p50_ms": 0.045667,
+        "wall_p95_ms": 0.045667,
+        "wall_sum_ms": 89.24229199999999
+      }
+    },
+    {
+      "run": "ab-365-cached-2",
+      "cached": true,
+      "initial_rebuild_model": {
+        "calls": 2,
+        "cpu_max_ms": 81.999125,
+        "cpu_p50_ms": 0.041,
+        "cpu_p95_ms": 0.041,
+        "cpu_sum_ms": 82.040125,
+        "main_thread_calls": 2,
+        "rows_max": 0,
+        "rows_min": 0,
+        "wall_max_ms": 82.031667,
+        "wall_p50_ms": 0.041584,
+        "wall_p95_ms": 0.041584,
+        "wall_sum_ms": 82.073251
+      }
+    },
+    {
+      "run": "ab-365-baseline-2",
+      "cached": false,
+      "initial_rebuild_model": {
+        "calls": 2,
+        "cpu_max_ms": 63.167417,
+        "cpu_p50_ms": 0.043625,
+        "cpu_p95_ms": 0.043625,
+        "cpu_sum_ms": 63.211042,
+        "main_thread_calls": 2,
+        "rows_max": 0,
+        "rows_min": 0,
+        "wall_max_ms": 63.218875,
+        "wall_p50_ms": 0.044125,
+        "wall_p95_ms": 0.044125,
+        "wall_sum_ms": 63.263
+      }
+    }
+  ]
+}

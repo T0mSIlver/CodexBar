@@ -1,0 +1,35 @@
+--- a/Sources/CodexBar/SpendDashboardModel.swift
++++ b/Sources/CodexBar/SpendDashboardModel.swift
+@@ -266,6 +266,7 @@
+         let displayedModels: [ModelRow]
+         let selectedDay: Date?
+         let hourlyPoints: [HourlyPoint]
++        let diagnosticHourlyDays: [Date]
+         let hourlyChartDomain: ClosedRange<Date>?
+         let timeZone: TimeZone
+ 
+@@ -322,6 +323,14 @@
+             self.displayedModels = Array(models.prefix(Self.modelRowDisplayLimit))
+             self.selectedDay = selectedDay
+             self.hourlyPoints = hourlyPoints
++            if FullSettingsDiagnostics.dateCacheEnabled {
++                let calendar = SpendDashboardModel.gregorianCalendar(timeZone: timeZone)
++                self.diagnosticHourlyDays = Set(hourlyPoints.filter {
++                    $0.hour >= chartDomain.lowerBound && $0.hour < chartDomain.upperBound
++                }.map { calendar.startOfDay(for: $0.hour) }).sorted()
++            } else {
++                self.diagnosticHourlyDays = []
++            }
+             self.hourlyChartDomain = hourlyChartDomain
+             self.timeZone = timeZone
+         }
+--- a/Sources/CodexBar/SpendTrendChartModel.swift
++++ b/Sources/CodexBar/SpendTrendChartModel.swift
+@@ -250,6 +250,7 @@
+     static func hourlyDays(_ group: SpendDashboardModel.CurrencyGroup) -> [Date] {
+         let diagnosticStart = FullSettingsDiagnostics.begin()
+         defer { FullSettingsDiagnostics.end("hourly-days", diagnosticStart, rows: group.hourlyPoints.count) }
++        if FullSettingsDiagnostics.dateCacheEnabled { return group.diagnosticHourlyDays }
+         return Set(group.hourlyPoints.filter {
+             $0.hour >= group.chartDomain.lowerBound && $0.hour < group.chartDomain.upperBound
+         }.map { group.calendar.startOfDay(for: $0.hour) }).sorted()

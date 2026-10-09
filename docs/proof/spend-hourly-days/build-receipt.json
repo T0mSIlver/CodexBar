@@ -1,0 +1,23 @@
+{
+  "baseline": "b0aa7fe0add90b06e3614328715d827f1c898a0f",
+  "configuration": "Release (-O)",
+  "executable_sha256": "6b54b745733d115d70d3a9dab202104a8ef7123898c56357a147dadac5dd929f",
+  "instrumentation_sha256": "389af61a07040173568c094a9d8548a524557ad9a44e473b80eb88584ad0f9a2",
+  "fixture_sha256": "d2f6c01477641b22eb5e4149b0e6c7d56d5616f62fdb37ff9ed7effd1231246a",
+  "helper_sha256": "e238d5c074dc29fd9b683984b8f9b150e1b811cac0ea56ac1490f8c8e349e16b",
+  "original_source_sha256": {
+    "Sources/CodexBar/CodexbarApp.swift": "9b86e42a3781ef20a002b377ba995969324a81c61d9a22a0904ebd5f850ecce2",
+    "Sources/CodexBar/SpendTrendChartModel.swift": "38a583a6983f0efe0a7c66343c497380cae945819a12258a02798397faa667a8",
+    "Sources/CodexBar/SpendDashboardController.swift": "258431ddac7229ef8815221b6b7b3e58bc5081799a48dc3765adad0f5a8f97e8",
+    "Sources/CodexBar/SpendDashboardTrendPanel.swift": "c080f2d784e283122e39327625c9048cf447201289f69d67250e7c2dc1346dee"
+  },
+  "synthetic_only": true,
+  "installed_app_modified": false,
+  "other_worktrees_modified": false,
+  "purpose": "Counts and thread CPU/wall durations in production SettingsWindowController/PreferencesView/SpendDashboardPane",
+  "diagnostic_launch_adaptations": [
+    "Dictionary defaults, temporary config, synthetic histories and loader; startupBehavior.testing; no account/provider probes",
+    "Production SettingsWindowController window factory and PreferencesView; Dock promotion callbacks stubbed because fixture already uses regular activation",
+    "The diagnostic command polling timer uses non-generic sleep(nanoseconds:) after a launch-only Task.sleep(for:) crash; measured functions retain production bodies"
+  ]
+}

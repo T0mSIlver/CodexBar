@@ -1,0 +1,79 @@
+--- a/Sources/CodexBar/CodexbarApp.swift
++++ b/Sources/CodexBar/CodexbarApp.swift
+@@ -26,6 +26,7 @@
+         if CodexBarCoreResourceSmoke.isRequested() {
+             exit(CodexBarCoreResourceSmoke.run())
+         }
++        if SpendDashboardAppProof.runIfRequested() { return }
+         #if DEBUG
+         if MenuBarLayoutNativeProof.runIfRequested() {
+             return
+--- a/Sources/CodexBar/SpendTrendChartModel.swift
++++ b/Sources/CodexBar/SpendTrendChartModel.swift
+@@ -46,6 +46,8 @@
+         sourceID: String? = nil,
+         overviewInterval: DateInterval? = nil)
+     {
++        let diagnosticStart = FullSettingsDiagnostics.begin()
++        defer { FullSettingsDiagnostics.end("trend-init", diagnosticStart, rows: group.dailyPoints.count + group.hourlyPoints.count) }
+         self.section = section
+         self.calendar = group.calendar
+         let points: [(source: (id: String, provider: UsageProvider, name: String), date: Date, cost: Double)]
+@@ -246,7 +248,9 @@
+     }
+ 
+     static func hourlyDays(_ group: SpendDashboardModel.CurrencyGroup) -> [Date] {
+-        Set(group.hourlyPoints.filter {
++        let diagnosticStart = FullSettingsDiagnostics.begin()
++        defer { FullSettingsDiagnostics.end("hourly-days", diagnosticStart, rows: group.hourlyPoints.count) }
++        return Set(group.hourlyPoints.filter {
+             $0.hour >= group.chartDomain.lowerBound && $0.hour < group.chartDomain.upperBound
+         }.map { group.calendar.startOfDay(for: $0.hour) }).sorted()
+     }
+--- a/Sources/CodexBar/SpendDashboardController.swift
++++ b/Sources/CodexBar/SpendDashboardController.swift
+@@ -173,6 +173,8 @@
+ 
+     @MainActor
+     static func configuration(settings: SettingsStore, store: UsageStore) -> SpendDashboardConfiguration {
++        let diagnosticStart = FullSettingsDiagnostics.begin()
++        defer { FullSettingsDiagnostics.end("configuration", diagnosticStart) }
+         store.discardSpendDashboardTokenPublicationsIfCostUsageDisabled()
+         let providers = self.costCapableProviders(store: store)
+         let codexSources = providers.contains(.codex)
+@@ -766,6 +768,8 @@
+     }
+ 
+     private static func snapshotRevision(_ snapshot: CostUsageTokenSnapshot) -> String {
++        let diagnosticStart = FullSettingsDiagnostics.begin()
++        defer { FullSettingsDiagnostics.end("snapshot-revision", diagnosticStart, rows: snapshot.sessions.count + snapshot.hourly.count + snapshot.daily.count) }
+         var encoder = SpendDashboardSnapshotRevisionEncoder()
+         encoder.append(snapshot.currencyCode)
+         encoder.append(snapshot.historyDays)
+@@ -1686,6 +1690,8 @@
+     }
+ 
+     private func rebuildModel(publish: Bool = true) {
++        let diagnosticStart = FullSettingsDiagnostics.begin()
++        defer { FullSettingsDiagnostics.end("rebuild-model", diagnosticStart) }
+         let configuration = self.configuration
+         self.model = SpendDashboardModel.build(
+             inputs: self.loadedInputs,
+--- a/Sources/CodexBar/SpendDashboardTrendPanel.swift
++++ b/Sources/CodexBar/SpendDashboardTrendPanel.swift
+@@ -13,6 +13,7 @@
+     @State private var focusedInterval: DateInterval?
+ 
+     var body: some View {
++        let _ = FullSettingsDiagnostics.count("trend-panel-body")
+         let legendProviders = SpendTrendChartModel(
+             group: self.group,
+             section: self.activeSection,
+@@ -207,6 +208,7 @@
+     }
+ 
+     var body: some View {
++        let _ = FullSettingsDiagnostics.count("trend-chart-body")
+         let model = self.model
+         VStack(alignment: .leading, spacing: 10) {
+             if self.section == .hourly {
