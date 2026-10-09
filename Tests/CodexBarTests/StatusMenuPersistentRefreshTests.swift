@@ -93,7 +93,7 @@ enum BlockingEnrichmentStage: Sendable {
 }
 
 @MainActor
-@Suite(.serialized)
+@Suite(.serialized, CodexCredentialFixtures())
 struct StatusMenuPersistentRefreshTests {
     private func makeSettings() -> SettingsStore {
         testSettingsStore(suiteName: "StatusMenuPersistentRefreshTests")
