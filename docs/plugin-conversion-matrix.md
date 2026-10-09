@@ -153,7 +153,7 @@ Abacus, Muse, LongCat, Replicate, and TypeSafe unchanged.
 
 | Provider | Status | Engines | Scope |
 |---|---|---|---|
-| langdock | `cut-over` | QuickJS + JavaScriptCore | Host-owned selected Edge profile, live session revalidation, and personal tRPC limits on both engines; no quota history or widgets. |
+| langdock | `cut-over` | QuickJS + JavaScriptCore | Host-owned selected browser profile, live session revalidation, and personal tRPC limits on both engines; no quota history or widgets. |
 | xapi | `cut-over` | QuickJS + JavaScriptCore | Same-session account discovery and dollar balances through host-owned cookies and CSRF header echo on both engines. |
 | lithosai | `cut-over` | QuickJS + JavaScriptCore | Opaque session cookies with same-origin host CSRF echo; active-organization balance and optional spend on both engines. |
 | workbuddy | `cut-over` | QuickJS + JavaScriptCore | Host-owned website session cookies with the matching Chrome User-Agent; billing summary plus optional package listings for the cycle reset on both engines. |

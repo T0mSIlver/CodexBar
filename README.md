@@ -183,7 +183,7 @@ See [CLI configuration](docs/cli-configuration.md) for the full flow.
 - Open to new providers: [provider authoring guide](docs/provider.md).
 
 <!-- Generated provider additions: Scripts/regenerate-provider-docs.mjs -->
-- [Langdock](docs/langdock.md) — Selected Microsoft Edge profile → personal included session and weekly limits (`web`, macOS).
+- [Langdock](docs/langdock.md) — Selected Edge, Chrome, or Safari profile → personal included session and weekly limits (`web`, macOS).
 - [X API](docs/xapi.md) — Chrome or manual console.x.com cookies for prepaid and free credits, including negative balances.
 - [LithosAI](docs/lithosai.md) — Chrome or manual console cookies for prepaid USD balance and optional UTC spend.
 - [WorkBuddy](docs/workbuddy.md) — Chrome or manual www.workbuddy.cn cookies for the monthly credits allowance, plan name, and cycle reset.
