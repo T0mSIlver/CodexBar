@@ -157,6 +157,128 @@ struct LangdockBrowserProfileTests {
                 .init(browserID: "safari", profileID: "safari.default"), from: [placeholder])
         }
     }
+
+    @Test(arguments: [
+        (file: "Library/Cookies/Cookies.binarycookies", root: "Library/Cookies"),
+        (
+            file: "Library/Containers/com.apple.Safari/Data/Library/Cookies/Cookies.binarycookies",
+            root: "Library/Containers/com.apple.Safari/Data/Library/Cookies"),
+        (
+            file: "Library/Containers/com.apple.Safari/Data/Library/WebKit/WebsiteDataStore/" +
+                "test/WebsiteData/Cookies/Cookies.binarycookies",
+            root: "Library/Containers/com.apple.Safari/Data/Library/WebKit/WebsiteDataStore"),
+        (
+            file: "Library/WebKit/WebsiteDataStore/test/WebsiteData/Cookies/Cookies.binarycookies",
+            root: "Library/WebKit/WebsiteDataStore"),
+    ], ["EPERM", "EACCES", "Cocoa", "underlying", "parent"])
+    func `Safari discovery classifies only permission errors from the selected root`(
+        location: (file: String, root: String), denial: String) throws
+    {
+        let home = URL(fileURLWithPath: "/synthetic/SafariHome", isDirectory: true)
+        let file = home.appendingPathComponent(location.file)
+        let root = home.appendingPathComponent(location.root)
+        let denied = switch denial {
+        case "Cocoa": NSError(domain: NSCocoaErrorDomain, code: CocoaError.fileReadNoPermission.rawValue)
+        case "underlying": NSError(
+                domain: NSCocoaErrorDomain,
+                code: CocoaError.fileReadUnknown.rawValue,
+                userInfo: [NSUnderlyingErrorKey: NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM))])
+        default: NSError(domain: NSPOSIXErrorDomain, code: denial == "EPERM" ? Int(EPERM) : Int(EACCES))
+        }
+        var probed: [String] = []
+        let failure = try #require(#expect(throws: ProviderFetchClassifiedError.self) {
+            try ProviderBrowserProfile.selectedStore(
+                .init(browserID: "safari", profileID: file.path),
+                from: [],
+                homeDirectories: [home],
+                listDirectory: { path in
+                    probed.append(path)
+                    if denial == "parent", path != file.deletingLastPathComponent().path { return [] }
+                    throw denied
+                })
+        })
+        #expect(failure.kind == .permissionDenied)
+        #expect(failure.message.contains("Full Disk Access"))
+        let expected = denial == "parent" && root.path != file.deletingLastPathComponent().path
+            ? [root.path, file.deletingLastPathComponent().path] : [root.path]
+        #expect(probed == expected)
+    }
+
+    @Test(arguments: [Int(ENOENT), Int(EIO)])
+    func `Safari missing or unrelated IO failures do not become permission denials`(code: Int) throws {
+        let home = URL(fileURLWithPath: "/synthetic/SafariHome", isDirectory: true)
+        let file = home.appendingPathComponent("Library/WebKit/WebsiteDataStore/test/Cookies.binarycookies")
+        var probed: [String] = []
+        let failure = try #require(#expect(throws: ProviderFetchClassifiedError.self) {
+            try ProviderBrowserProfile.selectedStore(
+                .init(browserID: "safari", profileID: file.path),
+                from: [],
+                homeDirectories: [home],
+                listDirectory: { path in
+                    probed.append(path)
+                    throw NSError(domain: NSPOSIXErrorDomain, code: code)
+                })
+        })
+        #expect(failure.kind == .missingCredential)
+        #expect(probed == [home.appendingPathComponent("Library/WebKit/WebsiteDataStore").path])
+    }
+
+    @Test(arguments: [false, true])
+    func `Safari metadata probes stay in the selected root and skip discoverable stores`(discoverable: Bool) throws {
+        let home = URL(fileURLWithPath: "/synthetic/SafariHome", isDirectory: true)
+        let root = home.appendingPathComponent("Library/WebKit/WebsiteDataStore")
+        let file = root.appendingPathComponent("test/WebsiteData/Cookies/Cookies.binarycookies")
+        let expected = BrowserCookieStore(
+            browser: .safari,
+            profile: .init(id: "safari.datastore.test", name: "Test"),
+            kind: .safari,
+            label: "Safari (Test)",
+            databaseURL: file)
+        var probed: [String] = []
+        let resolve = {
+            try ProviderBrowserProfile.selectedStore(
+                .init(browserID: "safari", profileID: file.path),
+                from: discoverable ? [expected] : [],
+                homeDirectories: [home],
+                listDirectory: { path in
+                    probed.append(path)
+                    guard [root.path, file.deletingLastPathComponent().path].contains(path) else {
+                        throw NSError(domain: NSPOSIXErrorDomain, code: Int(EPERM))
+                    }
+                    return []
+                })
+        }
+        if discoverable {
+            #expect(try resolve() == expected)
+            #expect(probed.isEmpty)
+        } else {
+            let failure = try #require(#expect(throws: ProviderFetchClassifiedError.self) { try resolve() })
+            #expect(failure.kind == .missingCredential)
+            #expect(probed == [root.path, file.deletingLastPathComponent().path])
+        }
+    }
+
+    @Test(arguments: [
+        "", "safari.default", "Library/Cookies/Cookies.binarycookies",
+        "/other-home/Library/Cookies/Cookies.binarycookies",
+        "/synthetic/SafariHome/Library/CookiesExtra/Cookies.binarycookies",
+        "/synthetic/SafariHome/Library/Cookies/nested/Cookies.binarycookies",
+        "/synthetic/SafariHome/Library/Cookies/Other.binarycookies",
+        "/synthetic/SafariHome/Library/WebKit/WebsiteDataStore/../../foreign/Cookies.binarycookies",
+    ])
+    func `Safari foreign malformed and placeholder paths never trigger metadata IO`(profileID: String) throws {
+        let failure = try #require(#expect(throws: ProviderFetchClassifiedError.self) {
+            try ProviderBrowserProfile.selectedStore(
+                .init(browserID: "safari", profileID: profileID),
+                from: [],
+                homeDirectories: [URL(fileURLWithPath: "/synthetic/SafariHome", isDirectory: true)],
+                listDirectory: { _ in
+                    Issue.record("Must not inspect foreign paths")
+                    return []
+                })
+        })
+        #expect(failure.kind == .missingCredential)
+    }
 }
 
 struct LangdockSafariImportTests {
@@ -199,7 +321,10 @@ struct LangdockSafariImportTests {
         let reader: ProviderPluginSelectedProfile.Reader = { selection in
             #expect(selection == profile)
             reads.withLock { $0 += 1 }
-            let store = try ProviderBrowserProfile.selectedStore(selection, from: client.codexBarStores(for: .safari))
+            let store = try ProviderBrowserProfile.selectedStore(
+                selection,
+                from: client.codexBarStores(for: .safari),
+                homeDirectories: client.configuration.homeDirectories)
             return try client.codexBarRecords(
                 matching: .init(domains: ["langdock.com", "app.langdock.com"], domainMatch: .exact), in: store)
                 .map(ProviderPluginCookieRecord.init)
