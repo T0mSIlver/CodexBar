@@ -4,7 +4,7 @@
 
 ### Added
 
-- Langdock: support explicitly selected Chrome and Safari profiles alongside Edge, preserving session checks and existing Edge selections.
+- Langdock: support explicitly selected Chrome and Safari profiles alongside Edge, preserving session checks and existing Edge selections (#4390). Thanks @dYn36!
 - Widgets: show minute-only live dates on macOS 15+ and place localized quota percentages beside reset references, with stacked headlines on narrow tiles (#4361). Thanks @brzvsk!
 - Providers: add Cosmic AI project token quotas, Aerostack monthly AI-token usage, Sail Research credit balance and spend, and Sofya plan/purchased credits through bundled plugins, with unsupported resets and quotas left unavailable (#4354, #4355, #4357, #4358). Thanks @spencer-shadley!
 - Codex: add a read-only core resolver for explicitly selected managed accounts, returning fresh access credentials after account, workspace, and home validation (#4360). Thanks @zieglar!
@@ -30,6 +30,7 @@
 
 ### Fixed
 
+- Linux: stop leaking 4 KB per empty procfs child-list read during process teardown in long-running `codexbar serve` sessions (#4377). Thanks @MonkeyMed!
 - Pi: keep readable local cost history when a live process has an unreadable environment, and use Pi's block logo across app and web icons (#4365, #4366). Thanks @oryband!
 - Linux: release exited Codex and Grok RPC child processes so long-running `codexbar serve` does not exhaust file descriptors (#4367). Thanks @MonkeyMed!
 - Homebrew updates: match version checks, one-click upgrades, and recovery commands to the official or steipete/tap install receipt while preserving update notifications (#4375). Thanks @dnicolson!
@@ -49,6 +50,7 @@
 - Claude: distinguish insights-only CLI reports from subscription-only notices so failed direct fallbacks preserve the original PTY error, and log that error before fallback (#4083). Thanks @sczhui!
 - Settings: open the CodexBar project website from the About pane's Website link (#4325). Thanks @elijahfriedman!
 - Docs: correct Codex Auto source order and explain credential renewal, local cost coverage, and the distinct Pi, OpenCodex, OpenCode, Amp, and dots paths (#3635, #3273, #3556, #4300).
+- Linux: reduce idle `codexbar serve` memory by periodically returning freed glibc heap pages to the operating system (#4374). Thanks @MonkeyMed!
 - Codex costs: share repeated turn identifiers when reading cached usage to reduce retained memory (#3323). Thanks @CharlieLZ and @kristofferR!
 
 ## 0.73.0 — 2026-10-07

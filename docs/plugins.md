@@ -566,8 +566,9 @@ the explicit `browserProfileID`. The first registered browser preserves legacy c
 the profile selection, previous measurements, and pending fetches. Safari requires a concrete cookie file;
 the importer's browser-wide placeholder is rejected.
 There is no default profile, Manual header path, other-profile fallback, or cookie-cache read/write.
-The single-browser `selectedProfileBrowser` initializer and property remain supported; the property returns
-`nil` for registrations that support multiple browsers.
+The single-browser `selectedProfileBrowser` initializer and property remain supported for source compatibility
+with the public `CodexBarCore` API shipped in v0.73.0. New registrations use `selectedProfileBrowsers`; the legacy
+property returns `nil` for registrations that support multiple browsers.
 
 The host fingerprints the selected browser/profile and the applicable required cookies before fetching. After
 success, failure, or cancellation it reads that same profile again under the background no-interaction gate.
