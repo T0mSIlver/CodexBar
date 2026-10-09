@@ -162,6 +162,8 @@
 "Could not start codex login" = "Die Codex-Anmeldung konnte nicht gestartet werden";
 "Could not switch system account" = "Das Systemkonto konnte nicht gewechselt werden";
 "Credits" = "Credits";
+"Top-up credits" = "Aufgeladene Credits";
+"Remaining" = "Übrig";
 "Credits history" = "Credits-Geschichte";
 "Cursor login failed" = "Die Cursor-Anmeldung ist fehlgeschlagen";
 "Custom" = "Benutzerdefiniert";
@@ -2435,3 +2437,67 @@
 "merged_icon_source_frontmost_app" = "Anbieter-App im Vordergrund";
 /* Provider menu bar color */
 "Color by provider" = "Nach Anbieter einfärben";
+
+/* Tool activity (English fallback pending translation) */
+"spend_tools_title" = "Tool activity";
+"spend_tools_loading" = "Reading local operations…";
+"spend_tools_unavailable" = "Could not read this log. Refresh to try again.";
+"spend_tools_scope" = "Native operations in this local log · completion date follows the chart filter";
+"spend_tools_operations" = "Operations";
+"spend_tools_attention" = "Needs review";
+"spend_tools_timed" = "Timing available";
+"spend_tools_coverage" = "%@ / %@";
+"spend_tools_partial" = "Partial coverage: some records are incomplete, unsupported, or beyond the scan limit.";
+"spend_tools_longest" = "Longest execution";
+"spend_tools_filter" = "Filter operations";
+"spend_tools_filter_all" = "All";
+"spend_tools_filter_attention" = "Needs review";
+"spend_tools_filter_slow" = "Slow (≥10 s)";
+"spend_tools_empty" = "No native tool operations recorded for these dates.";
+"spend_tools_no_matches" = "No operations match this filter.";
+"spend_tools_more" = "Show more operations";
+"spend_tools_hidden" = "Turn off Hide personal info to inspect command and result details.";
+"spend_tools_changed" = "The log changed or is unavailable. Refresh tool activity before inspecting details.";
+"spend_tools_input" = "Command / arguments";
+"spend_tools_output" = "Result";
+"spend_tools_no_details" = "This operation has no recorded input or result.";
+"spend_tools_truncated" = "Preview only · large input or output has been shortened";
+"spend_tools_interval" = "Recorded interval";
+"spend_tools_kind_command" = "Command";
+"spend_tools_kind_mcp" = "MCP tool";
+"spend_tools_kind_dynamic" = "Dynamic tool";
+"spend_tools_kind_fileChange" = "File change";
+"spend_tools_kind_webSearch" = "Web search";
+"spend_tools_kind_image" = "Image operation";
+"spend_tools_kind_extensionItem" = "Extension operation";
+"spend_tools_exit" = "Exit code %@";
+"spend_tools_outcome_completed" = "Completed";
+"spend_tools_outcome_nonzeroExit" = "Nonzero exit";
+"spend_tools_outcome_toolError" = "Tool error";
+"spend_tools_outcome_declined" = "Declined";
+"spend_tools_outcome_unknown" = "Outcome not recorded";
+"spend_tools_help" = "Counts native operations, not model orchestration calls. Nonzero exit codes do not mean the task failed. Native duration is preferred; recorded intervals are labeled. Parallel operation times are not added into task duration.";
+"spend_tools_raw_preview" = "Raw record preview";
+"spend_tools_milliseconds" = "%@ ms";
+"Credit balance" = "Credit-Guthaben";
+"Monthly credits used" = "Diesen Monat verbrauchte Credits";
+
+/* Account provider usage and credentials */
+"Monthly AI tokens" = "Monatliche KI-Tokens";
+"Aerostack cost history is not available." = "Der Kostenverlauf von Aerostack ist nicht verfügbar.";
+"Account JWT" = "Konto-JWT";
+"Saved in CodexBar's local config file. Replace when expired; CodexBar does not refresh it." = "Gespeichert in der lokalen Konfigurationsdatei von CodexBar. Nach Ablauf ersetzen; CodexBar erneuert das Token nicht.";
+"Account JWT, not an Agent Endpoint key" = "Konto-JWT, kein Agent Endpoint-Schlüssel";
+"Input tokens" = "Eingabe-Tokens";
+"Output tokens" = "Ausgabe-Tokens";
+"Cosmic AI cost history is not available." = "Der Kostenverlauf von Cosmic AI ist nicht verfügbar.";
+"Personal Access Token" = "Persönliches Zugriffstoken";
+"Saved in CodexBar's local config file. Reads project usage only; bucket keys are not supported." = "Gespeichert in der lokalen Konfigurationsdatei von CodexBar. Liest nur die Projektnutzung; Bucket-Schlüssel werden nicht unterstützt.";
+"cos_…" = "cos_…";
+"Required. Usage covers this project only. Or set COSMIC_PROJECT_ID." = "Erforderlich. Die Nutzung bezieht sich nur auf dieses Projekt. Alternativ COSMIC_PROJECT_ID setzen.";
+"Sail Research cost history is not available." = "Der Kostenverlauf von Sail Research ist nicht verfügbar.";
+"Sail Research API key" = "API-Schlüssel für Sail Research";
+"Saved in CodexBar's local config file. Or set SAIL_API_KEY." = "Gespeichert in der lokalen Konfigurationsdatei von CodexBar. Oder setzen Sie SAIL_API_KEY.";
+"Sofya cost history is not available." = "Der Kostenverlauf von Sofya ist nicht verfügbar.";
+"Sofya API key" = "API-Schlüssel für Sofya";
+"Saved in CodexBar's local config file. Or set SOFYA_API_KEY." = "Gespeichert in der lokalen Konfigurationsdatei von CodexBar. Oder setzen Sie SOFYA_API_KEY.";
