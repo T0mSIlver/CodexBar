@@ -101,6 +101,17 @@ class SwiftPMCacheTests(unittest.TestCase):
         self.assertEqual(result["restored"], len(self.names))
         self.assertEqual(result["missing"], 1)
 
+    def test_new_inputs_in_every_package_target_require_clean_fallback(self):
+        for prefix in cache.BUILD_INPUT_PREFIXES:
+            with self.subTest(prefix=prefix):
+                name = prefix + "Added.swift"
+                self.write(name, "new input\n")
+                self.git("add", name)
+                self.assertIn("fallback", self.result())
+                self.assertEqual(self.result()["missing"], 1)
+                self.git("rm", "--cached", "--", name)
+                (self.root / name).unlink()
+
     def test_changed_git_or_filesystem_permissions_are_not_normalized(self):
         path = self.root / "Sources/probe.c"
         self.write("Sources/probe.c", "original\n")

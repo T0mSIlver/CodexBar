@@ -22,6 +22,7 @@ CONTEXT_INPUTS = (
     "Scripts/ci_swiftpm_cache.py", "Scripts/test.sh", "Scripts/test_environment.sh",
     "Scripts/ci_swift_test_by_suite.py", "Scripts/direct_swift_test_groups.py",
 )
+BUILD_INPUT_PREFIXES = ("Sources/", "Tests/", "TestsPlugin/", "TestsLinux/", "WidgetExtension/")
 
 
 def build_context(root, lane):
@@ -205,9 +206,10 @@ def restore(root, metadata, context):
             tracked = tracked_files(root)
         except (OSError, ValueError, UnicodeError, RecursionError) as error:
             return {**result, "fallback": str(error)}
+
         def build_inputs(names):
             return {name for name in names if name in {"Package.swift", "Package.resolved"}
-                    or name.startswith(("Sources/", "Tests/", "WidgetExtension/"))}
+                    or name.startswith(BUILD_INPUT_PREFIXES)}
 
         cached_inputs, current_inputs = build_inputs(files), build_inputs(tracked)
         if cached_inputs != current_inputs:
