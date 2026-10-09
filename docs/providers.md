@@ -164,7 +164,7 @@ complete when the available scan window covers fewer days.
 
 | Provider | Source |
 |---|---|
-| [Langdock](langdock.md) | Selected Microsoft Edge profile → personal included session and weekly limits (`web`, macOS). |
+| [Langdock](langdock.md) | Selected Edge, Chrome, or Safari profile → personal included session and weekly limits (`web`, macOS). |
 | [X API](xapi.md) | Chrome or manual console.x.com cookies for prepaid and free credits, including negative balances. |
 | [LithosAI](lithosai.md) | Chrome or manual console cookies for prepaid USD balance and optional UTC spend. |
 | [WorkBuddy](workbuddy.md) | Chrome or manual www.workbuddy.cn cookies for the monthly credits allowance, plan name, and cycle reset. |

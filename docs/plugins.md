@@ -560,8 +560,15 @@ credential discovery merely to use the default script builder.
 A bundled plugin can declare `cookiePolicy.store: "selected-profile"` with `selection: "request-url"`,
 `cache: "nonpersistent"`, `imports: "access-gated"`, a nonempty `requiredCookies` list, and a `sessionURL` on
 its single declared request host. Its `PluginProviderSpec.WebSource` registers a settings section with
-`selectedProfileBrowser`; the shared **Browser profile** picker persists the explicit `browserProfileID`.
+`selectedProfileBrowsers`; the shared **Browser** and **Browser profile** pickers persist `browserID` and
+the explicit `browserProfileID`. The first registered browser preserves legacy configurations without a
+`browserID`; it does not select a profile. Unsupported browser IDs fail closed. Changing the browser clears
+the profile selection, previous measurements, and pending fetches. Safari requires a concrete cookie file;
+the importer's browser-wide placeholder is rejected.
 There is no default profile, Manual header path, other-profile fallback, or cookie-cache read/write.
+The single-browser `selectedProfileBrowser` initializer and property remain supported for source compatibility
+with the public `CodexBarCore` API shipped in v0.73.0. New registrations use `selectedProfileBrowsers`; the legacy
+property returns `nil` for registrations that support multiple browsers.
 
 The host fingerprints the selected browser/profile and the applicable required cookies before fetching. After
 success, failure, or cancellation it reads that same profile again under the background no-interaction gate.
