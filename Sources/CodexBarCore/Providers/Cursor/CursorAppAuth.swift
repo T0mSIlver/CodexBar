@@ -402,28 +402,4 @@ struct CursorAgentAuthStore: CursorAppAuthSessionProviding {
     }
 }
 
-/// Local Cursor sessions in order: the first usable one, else the first found, so an expired token still reports
-/// as such. A store that fails to read does not hide the others.
-struct CursorLocalAuthStores: CursorAppAuthSessionProviding {
-    static let linuxDefault = Self(stores: [CursorAppAuthStore(), CursorAgentAuthStore()])
-
-    let stores: [any CursorAppAuthSessionProviding]
-
-    func loadSession() throws -> CursorAppAuthSession? {
-        var found: CursorAppAuthSession?
-        var failure: (any Error)?
-        for store in self.stores {
-            do {
-                guard let session = try store.loadSession() else { continue }
-                if session.isUsable { return session }
-                found = found ?? session
-            } catch {
-                failure = failure ?? error
-            }
-        }
-        if let found { return found }
-        if let failure { throw failure }
-        return nil
-    }
-}
 #endif
