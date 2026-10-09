@@ -29,6 +29,7 @@
 
 ### Fixed
 
+- Claude: retain session, weekly, and model-specific quotas when tall inline CLI usage panels exceed the former 50-row terminal (#4392). Thanks @T0mSIlver!
 - Linux: stop leaking 4 KB per empty procfs child-list read during process teardown in long-running `codexbar serve` sessions (#4377). Thanks @MonkeyMed!
 - Pi: keep readable local cost history when a live process has an unreadable environment, and use Pi's block logo across app and web icons (#4365, #4366). Thanks @oryband!
 - Linux: release exited Codex and Grok RPC child processes so long-running `codexbar serve` does not exhaust file descriptors (#4367). Thanks @MonkeyMed!
