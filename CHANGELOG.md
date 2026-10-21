@@ -9,6 +9,7 @@
 
 ### Fixed
 
+- CLI: reject an unknown `--provider` in `usage`, `cards` and `cost` (previously the enabled providers were shown), and a `cost --days` value that is not a whole number (previously the saved period was used).
 - Grok: restore the weekly Credits window on zero-usage weeks when ACP omits the percentage, while preserving prepaid balances and leaving unvalidated usage unknown (#4674, #4679). Thanks @LeoLin990405 and @psl75011!
 - Linux CLI: prevent static musl builds from crashing when scanning non-empty Codex session files, with a regression check for musl and glibc builds (#4672, #4673). Thanks @harjothkhara and @psl75011!
 
