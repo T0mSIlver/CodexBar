@@ -1383,8 +1383,10 @@ extension CostUsageScanner {
 
 extension Data {
     func containsAscii(_ needle: String) -> Bool {
-        guard let n = needle.data(using: .utf8) else { return false }
-        guard !n.isEmpty else { return self.range(of: n) != nil }
+        // Bytes via `String.utf8`, not `String.data(using:)`: on the static musl CLI the latter crashes
+        // resolving `Data` generic metadata on every scanned line (#4672).
+        let n = Array(needle.utf8)
+        guard !n.isEmpty else { return self.range(of: Data()) != nil }
         guard n.count <= self.count else { return false }
         return self.withUnsafeBytes { haystack in
             n.withUnsafeBytes { pattern in

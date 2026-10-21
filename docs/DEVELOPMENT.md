@@ -327,6 +327,8 @@ provider-toggle actions under test on the production setter; the fixture helper 
 Cost marker searches compare exact UTF-8 bytes with bounded libc `memchr` and `memcmp` calls.
 Both buffers remain borrowed during the search, and candidate starts stop at the last position
 where the complete needle fits. Empty needles retain Foundation's `Data.range(of:)` behavior.
+Needle bytes come from `String.utf8`, never `String.data(using:)`, which crashed the static musl CLI (#4672);
+`Scripts/smoke_linux_cli_codex_cost.sh` runs the musl build against synthetic Codex sessions in CI.
 `CostUsageAsciiSearchTests` compares results with Foundation, including nonzero-index data views,
 binary bytes, Unicode, repeated prefixes, and matches at the buffer boundary.
 JSON decoding, parser classification, and resumable scan state keep their existing paths.

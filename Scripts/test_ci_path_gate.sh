@@ -130,6 +130,7 @@ assert_linux_musl_gate true rename-from-swift $'R100\tSources/CodexBarCore/Old.s
 assert_linux_musl_gate true rename-to-swift $'R100\tdocs/New.md\tSources/CodexBarCore/New.swift'
 assert_linux_musl_gate true sdk-installer $'M\tScripts/install_swift_static_sdk.sh'
 assert_linux_musl_gate true removed-sdk-installer $'D\tScripts/install_swift_static_sdk.sh'
+assert_linux_musl_gate true cost-smoke $'M\tScripts/smoke_linux_cli_codex_cost.sh'
 assert_linux_musl_gate false tests-only $'M\tTests/CodexBarTests/ProcessTests.swift'
 assert_linux_musl_gate false workflow-only $'M\t.github/workflows/ci.yml'
 assert_linux_musl_gate false script-only $'M\tScripts/ci_verify_test_jobs.sh'
