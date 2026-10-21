@@ -2,7 +2,7 @@ name: musl-4672-proof
 
 on:
   push:
-    branches: [proof/musl-4672]
+    branches: ['proof/musl-4672*']
   workflow_dispatch:
 
 permissions:
