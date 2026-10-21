@@ -2,6 +2,10 @@
 
 ## 0.83.1 — Unreleased
 
+### Fixed
+
+- Config: say what is wrong with a config file that fails to load (invalid JSON, a missing key, or a wrong type at a named key path) instead of "The data isn't in the correct format".
+
 ## 0.83.0 — 2026-10-31
 
 ### Highlights
