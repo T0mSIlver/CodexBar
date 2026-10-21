@@ -484,6 +484,15 @@ jobs:
           --swift-sdk "$SWIFT_STATIC_LINUX_SDK"
           --triple "$SWIFT_STATIC_LINUX_SDK_TRIPLE"
 
+      - name: Smoke test Codex cost scan (Linux musl x86_64)
+        timeout-minutes: 5
+        run: |
+          set -euo pipefail
+          bin_dir="$(swift build -c release --product CodexBarCLI \
+            --swift-sdk "$SWIFT_STATIC_LINUX_SDK" \
+            --triple "$SWIFT_STATIC_LINUX_SDK_TRIPLE" --show-bin-path)"
+          ./Scripts/smoke_linux_cli_codex_cost.sh "$bin_dir/CodexBarCLI"
+
   build-linux-cli:
     needs: changes
     if: ${{ needs.changes.outputs.linux-cli-build == 'true' }}
