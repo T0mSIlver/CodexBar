@@ -100,7 +100,14 @@ public struct CodexBarConfig: Codable, Sendable {
     /// File I/O keeps opaque records as JSON bytes, including numbers outside Codable's numeric range.
     public static func decode(from data: Data) throws -> Self {
         let decoder = JSONDecoder()
-        let records = try OpaqueConfigJSON.providers(in: data).entries
+        let records: [Range<Int>]
+        do {
+            records = try OpaqueConfigJSON.providers(in: data).entries
+        } catch {
+            // The record scan only says the document is unusable; JSONDecoder can say why.
+            do { _ = try decoder.decode(Self.self, from: data) } catch let reason as DecodingError { throw reason }
+            throw error
+        }
         decoder.userInfo[Self.rawProvidersKey] = records.map { data.subdata(in: $0) }
         return try decoder.decode(Self.self, from: data)
     }

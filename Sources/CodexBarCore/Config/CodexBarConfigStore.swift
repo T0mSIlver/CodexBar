@@ -43,7 +43,38 @@ public struct CodexBarConfigStore: @unchecked Sendable {
         do {
             return try CodexBarConfig.decode(from: data).normalized()
         } catch {
-            throw CodexBarConfigStoreError.decodeFailed(error.localizedDescription)
+            throw CodexBarConfigStoreError.decodeFailed(Self.decodeFailureReason(error, data: data))
+        }
+    }
+
+    /// Foundation describes every decoding failure as "The data isn't in the correct format".
+    static func decodeFailureReason(_ error: any Error, data: Data) -> String {
+        switch error {
+        case let DecodingError.keyNotFound(key, context):
+            return "missing key '\(Self.codingPathDescription(context.codingPath + [key]))'"
+        case let DecodingError.typeMismatch(_, context) where !context.codingPath.isEmpty,
+             let DecodingError.valueNotFound(_, context) where !context.codingPath.isEmpty,
+             let DecodingError.dataCorrupted(context) where !context.codingPath.isEmpty:
+            return "'\(Self.codingPathDescription(context.codingPath))': \(context.debugDescription)"
+        default:
+            break
+        }
+        do {
+            _ = try JSONSerialization.jsonObject(with: data, options: [.fragmentsAllowed])
+        } catch {
+            let detail = (error as NSError).userInfo[NSDebugDescriptionErrorKey] as? String
+            return "invalid JSON" + (detail.map { " (\($0))" } ?? "")
+        }
+        return error.localizedDescription
+    }
+
+    private static func codingPathDescription(_ path: [any CodingKey]) -> String {
+        path.reduce(into: "") { result, key in
+            if let index = key.intValue {
+                result += "[\(index)]"
+            } else {
+                result += result.isEmpty ? key.stringValue : ".\(key.stringValue)"
+            }
         }
     }
 
