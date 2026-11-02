@@ -236,6 +236,7 @@ a second identifier is an error. For an option value beginning with a dash, use 
 - `--provider <id|both|all>` (default: enabled providers in config; falls back to defaults when missing).
   - Accepts raw IDs from `codexbar config providers --format json` as well as CLI names and aliases. For example, `alibabatokenplan` and `alibaba-token-plan` select the same provider; existing CLI names and aliases take precedence if names overlap.
   - Use a registered [provider ID](provider-ids.md) or CLI alias. Enabled providers and ordering live in the config file.
+  - `usage`, `cards` and `cost` exit `1` with `Error: unknown provider '<value>'` when the value names no provider.
   - With three or more providers enabled, the default stays scoped to enabled providers; use `--provider all` to query
     every registered provider.
   - `--account <label>` / `--account-index <n>` / `--all-accounts` (token accounts from config, or all visible Codex accounts for Codex; requires a single provider).
