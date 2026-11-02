@@ -16,8 +16,19 @@ import CoreFoundation
 #endif
 
 extension CodexBarCLI {
-    static func decodeProvider(from values: ParsedValues, config: CodexBarConfig) -> ProviderSelection {
+    static func decodeProvider(
+        from values: ParsedValues,
+        config: CodexBarConfig,
+        output: CLIOutputPreferences) -> ProviderSelection
+    {
         let rawOverride = values.options["provider"]?.last
+        if let rawOverride, ProviderSelection(argument: rawOverride) == nil {
+            Self.exit(
+                code: .failure,
+                message: "Error: unknown provider '\(rawOverride)'",
+                output: output,
+                kind: .args)
+        }
         return Self.providerSelection(
             rawOverride: rawOverride,
             enabled: config.enabledProviders().compactMap(\.firstPartyProvider))

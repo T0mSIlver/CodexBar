@@ -2,6 +2,10 @@
 
 ## 0.83.1 — Unreleased
 
+### Fixed
+
+- CLI: reject an unknown `--provider` in `usage`, `cards` and `cost` instead of silently showing every enabled provider.
+
 ## 0.83.0 — 2026-10-31
 
 ### Highlights
